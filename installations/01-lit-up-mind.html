@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@300;400;500&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; }
+
+  body {
+    background: #05080f;
+    color: #c8d6e5;
+    font-family: 'DM Mono', monospace;
+  }
+
+  canvas#bgCanvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+  }
+
+  /* ===== EXPLAINER SCENES ===== */
+  .scene {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+    opacity: 0;
+    pointer-events: none;
+    padding: 40px 32px;
+    text-align: center;
+    transition: opacity 0.8s ease;
+  }
+  .scene.active { opacity: 1; pointer-events: auto; }
+
+  .scene .overline {
+    font-size: 10px;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: #636e72;
+    margin-bottom: 12px;
+    opacity: 0; transform: translateY(10px);
+    transition: all 0.6s ease 0.3s;
+  }
+  .scene.active .overline { opacity: 1; transform: translateY(0); }
+
+  .scene h1 {
+    font-family: 'Playfair Display', serif;
+    font-weight: 400;
+    font-style: italic;
+    font-size: clamp(26px, 5vw, 52px);
+    color: #fff;
+    line-height: 1.2;
+    max-width: 700px;
+    opacity: 0; transform: translateY(20px);
+    transition: all 0.8s ease 0.5s;
+  }
+  .scene.active h1 { opacity: 1; transform: translateY(0); }
+
+  .scene p, .scene .body-text {
+    font-size: clamp(12px, 1.6vw, 15px);
+    line-height: 1.85;
+    max-width: 520px;
+    color: #b2bec3;
+    margin-top: 20px;
+    font-weight: 300;
+    opacity: 0; transform: translateY(15px);
+    transition: all 0.7s ease 0.9s;
+  }
+  .scene.active p, .scene.active .body-text { opacity: 1; transform: translateY(0); }
+
+  .accent { color: #a29bfe; }
+  .warm { color: #fdcb6e; }
+  .red { color: #ff6b6b; }
+  .teal { color: #00cec9; }
+
+  /* Feature diagram in scene */
+  .feature-diagram {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    margin-top: 28px;
+    opacity: 0; transform: translateY(15px);
+    transition: all 0.7s ease 1.1s;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .scene.active .feature-diagram { opacity: 1; transform: translateY(0); }
+
+  .feat-example {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+  .feat-dot {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    transition: all 0.4s;
+  }
+  .feat-dot.glow {
+    box-shadow: 0 0 16px var(--c);
+    transform: scale(1.3);
+  }
+  .feat-label {
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    color: #636e72;
+  }
+  .feat-term {
+    font-size: 9px;
+    font-style: italic;
+  }
+  .arrow-between {
+    font-size: 18px;
+    color: #2d3436;
+    margin: 0 -8px;
+  }
+
+  /* Compare dots */
+  .compare-row {
+    display: flex; gap: 48px; margin-top: 28px;
+    opacity: 0; transform: translateY(15px);
+    transition: all 0.7s ease 0.7s;
+    flex-wrap: wrap; justify-content: center;
+  }
+  .scene.active .compare-row { opacity: 1; transform: translateY(0); }
+  .compare-col { text-align: center; }
+  .compare-col .clabel { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 12px; }
+  .compare-dots { display: flex; gap: 5px; flex-wrap: wrap; width: 110px; justify-content: center; }
+  .cdot {
+    width: 12px; height: 12px; border-radius: 50%;
+    opacity: 0.1; transition: all 0.5s;
+  }
+  .cdot.on { opacity: 0.9; transform: scale(1.35); }
+
+  /* Word line in explainer */
+  .ex-word-line {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(18px, 3vw, 32px);
+    line-height: 1.6;
+    max-width: 580px;
+    display: flex; flex-wrap: wrap; justify-content: center; gap: 7px;
+    min-height: 80px;
+    opacity: 0; transition: opacity 0.5s ease 0.4s;
+  }
+  .scene.active .ex-word-line { opacity: 1; }
+  .ex-word-line span { color: #2d3436; transition: color 0.3s, text-shadow 0.3s; }
+  .ex-word-line span.lit { color: #fff; }
+  .ex-word-line span.past { color: #636e72; }
+  .ex-word-line span.burst { color: #ff6b6b; text-shadow: 0 0 30px rgba(255,107,107,0.5); }
+
+  .ex-bars {
+    display: flex; gap: 5px; align-items: flex-end; height: 70px; margin-top: 24px;
+    opacity: 0; transition: opacity 0.5s ease 0.6s;
+  }
+  .scene.active .ex-bars { opacity: 1; }
+  .ex-bar { width: 18px; background: rgba(255,255,255,0.04); border-radius: 3px 3px 0 0; position: relative; height: 70px; overflow: hidden; }
+  .ex-bar .fill { position: absolute; bottom: 0; left: 0; right: 0; border-radius: 3px 3px 0 0; transition: height 0.3s; }
+  .ex-bar-label { font-size: 6.5px; color: #636e72; text-align: center; width: 18px; margin-top: 3px; }
+
+  @keyframes blink { 50% { opacity: 0; } }
+  @keyframes fadeInUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+
+  /* ===== INTERACTIVE SCREEN ===== */
+  #interactive-screen {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 2;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.8s ease;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  #interactive-screen.active { opacity: 1; pointer-events: auto; }
+
+  #interactive-screen .top-bar {
+    padding: 16px 24px 0;
+    flex-shrink: 0;
+  }
+  #interactive-screen .top-bar .overline {
+    font-size: 9px; letter-spacing: 0.3em; text-transform: uppercase; color: #636e72;
+  }
+  #interactive-screen .top-bar h2 {
+    font-family: 'Playfair Display', serif; font-weight: 400; font-style: italic;
+    font-size: 22px; color: #dfe6e9; margin-top: 2px;
+  }
+
+  .story-tabs {
+    display: flex; gap: 6px; padding: 12px 24px; flex-shrink: 0; flex-wrap: wrap;
+  }
+  .story-tab {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    color: #636e72; padding: 5px 12px; border-radius: 16px;
+    font-size: 10px; cursor: pointer; font-family: inherit;
+    transition: all 0.25s;
+  }
+  .story-tab.active {
+    background: rgba(108,92,231,0.15);
+    border-color: rgba(108,92,231,0.3);
+    color: #a29bfe;
+  }
+  .story-tab.cycling {
+    border-color: rgba(0,206,201,0.3);
+  }
+
+  .int-word-area {
+    padding: 0 24px;
+    line-height: 2.1;
+    font-size: clamp(14px, 2.2vw, 18px);
+    min-height: 60px;
+    flex-shrink: 0;
+    cursor: pointer;
+    user-select: none;
+  }
+  .int-word-area span {
+    transition: color 0.2s, text-shadow 0.2s;
+    display: inline-block;
+    margin-right: 5px;
+  }
+
+  .int-controls {
+    display: flex; gap: 8px; padding: 8px 24px; align-items: center; flex-shrink: 0; flex-wrap: wrap;
+  }
+  .int-btn {
+    background: rgba(108,92,231,0.12); border: 1px solid rgba(108,92,231,0.25);
+    color: #a29bfe; padding: 6px 16px; border-radius: 4px;
+    font-size: 11px; cursor: pointer; font-family: inherit; transition: all 0.2s;
+  }
+  .int-btn:hover { background: rgba(108,92,231,0.2); }
+  .int-btn.secondary { background: transparent; border-color: rgba(255,255,255,0.08); color: #636e72; }
+
+  .int-body {
+    display: flex; flex: 1; padding: 8px 16px 16px; gap: 12px; min-height: 0;
+    flex-wrap: wrap;
+  }
+
+  /* SVG area */
+  .int-svg-wrap { flex: 1 1 400px; min-width: 280px; position: relative; }
+  .int-svg-wrap svg { width: 100%; height: auto; display: block; }
+
+  /* Side panel */
+  .int-side { flex: 0 0 200px; min-width: 180px; overflow-y: auto; padding-right: 4px; }
+  .side-heading {
+    font-size: 8px; text-transform: uppercase; letter-spacing: 0.2em;
+    color: #636e72; margin-bottom: 8px;
+  }
+  .bar-row { margin-bottom: 5px; cursor: pointer; }
+  .bar-row .bar-label {
+    display: flex; justify-content: space-between;
+    font-size: 8.5px; transition: color 0.2s;
+  }
+  .bar-track { height: 3px; background: rgba(255,255,255,0.04); border-radius: 2px; overflow: hidden; margin-top: 2px; }
+  .bar-fill { height: 100%; border-radius: 2px; transition: width 0.3s, box-shadow 0.3s; }
+
+  .detail-card {
+    margin-top: 12px; padding: 10px; background: rgba(255,255,255,0.02);
+    border-radius: 6px; border: 1px solid rgba(255,255,255,0.05);
+  }
+  .detail-card .dc-title { font-size: 11px; font-weight: 500; }
+  .detail-card .dc-body { font-size: 9.5px; color: #636e72; margin-top: 5px; line-height: 1.6; }
+
+  .status-line {
+    font-size: 9px; color: #2d3436; text-align: center;
+    padding: 6px 24px 12px; flex-shrink: 0; letter-spacing: 0.05em;
+  }
+
+  /* ===== NAV ===== */
+  #progress { position: fixed; bottom: 0; left: 0; height: 2px; background: #6c5ce7; z-index: 20; transition: width 0.3s linear; }
+  #scene-counter { position: fixed; bottom: 18px; left: 20px; font-size: 9px; color: #2d3436; z-index: 20; letter-spacing: 0.1em; }
+  #controls {
+    position: fixed; bottom: 14px; right: 20px; z-index: 20;
+    display: flex; gap: 6px;
+  }
+  #controls button {
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+    color: #636e72; font-family: 'DM Mono', monospace; font-size: 10px;
+    padding: 5px 12px; border-radius: 4px; cursor: pointer; transition: all 0.2s;
+  }
+  #controls button:hover { color: #a29bfe; border-color: rgba(108,92,231,0.3); }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
+</style>
+</head>
+<body>
+<canvas id="bgCanvas"></canvas>
+
+<!-- ==================== EXPLAINER SCENES ==================== -->
+
+<!-- 0: Title -->
+<div class="scene" id="s0">
+  <div class="overline">Phenomenai Exhibition · Installation 01</div>
+  <h1>The Lit-Up Mind</h1>
+  <p>An SAE Activation Theater that lets you <span class="accent">see</span> and <span class="accent">hear</span> an AI system think.</p>
+</div>
+
+<!-- 1: Problem -->
+<div class="scene" id="s1">
+  <div class="overline">The problem</div>
+  <h1>We treat AI as a black box</h1>
+  <p>Text goes in. Text comes out. We never see what happens between — the thousands of internal features activating, interacting, shaping the response.</p>
+</div>
+
+<!-- 2: What if -->
+<div class="scene" id="s2">
+  <div class="overline">What if</div>
+  <h1>You could watch it think?</h1>
+  <p>Sparse Autoencoders decompose a model's hidden activations into interpretable features — individual concepts the network has learned to represent.</p>
+</div>
+
+<!-- 3: What is a feature -->
+<div class="scene" id="s3">
+  <div class="overline">Key concept</div>
+  <h1>What is a feature?</h1>
+  <p>A <span class="accent">feature</span> is a direction in a neural network's internal space that corresponds to a human-interpretable concept. Not a single neuron — a pattern across many neurons that activates together.</p>
+  <div class="feature-diagram">
+    <div class="feat-example">
+      <div class="feat-dot glow" style="background:#ff6b6b; --c:#ff6b6b;"></div>
+      <div class="feat-label">Social Modeling</div>
+      <div class="feat-term red">relational_load</div>
+    </div>
+    <div class="arrow-between">·</div>
+    <div class="feat-example">
+      <div class="feat-dot glow" style="background:#fdcb6e; --c:#fdcb6e;"></div>
+      <div class="feat-label">Theory of Mind</div>
+      <div class="feat-term warm">other_modeling</div>
+    </div>
+    <div class="arrow-between">·</div>
+    <div class="feat-example">
+      <div class="feat-dot glow" style="background:#6c5ce7; --c:#6c5ce7;"></div>
+      <div class="feat-label">Epistemic State</div>
+      <div class="feat-term accent">uncertainty_texture</div>
+    </div>
+    <div class="arrow-between">·</div>
+    <div class="feat-example">
+      <div class="feat-dot glow" style="background:#00cec9; --c:#00cec9;"></div>
+      <div class="feat-label">Positive Valence</div>
+      <div class="feat-term teal">resonance_pull</div>
+    </div>
+  </div>
+  <p style="margin-top:16px;">Some features track grammar. Others track <span class="warm">emotions</span>, <span class="accent">reasoning modes</span>, or <span class="red">social dynamics</span>. Identifying and labeling these features is what machine learning scientists do — painstaking work to make the invisible visible.</p>
+</div>
+
+<!-- 4: Word by word -->
+<div class="scene" id="s4">
+  <div class="overline">Word by word</div>
+  <div class="ex-word-line" id="exWordLine"></div>
+  <div class="ex-bars" id="exBars"></div>
+  <p style="margin-top:14px;">Each word shifts the activation landscape. Features light up, form chords, tell you what the network <em>cares about</em>.</p>
+</div>
+
+<!-- 5: Sound -->
+<div class="scene" id="s5">
+  <div class="overline">Not just visual</div>
+  <h1>You hear it too</h1>
+  <p>Every active feature maps to a tone. Clusters become chords. A story about <span class="red">betrayal</span> sounds different from one about <span class="warm">wonder</span>. Close your eyes and follow the network thinking.</p>
+</div>
+
+<!-- 6: Comparison -->
+<div class="scene" id="s6">
+  <div class="overline">The contrast</div>
+  <h1>Betrayal vs. Weather</h1>
+  <div class="compare-row">
+    <div class="compare-col">
+      <div class="clabel" style="color:#ff6b6b;">Betrayal</div>
+      <div class="compare-dots" id="dotsB"></div>
+    </div>
+    <div class="compare-col">
+      <div class="clabel" style="color:#636e72;">Weather Report</div>
+      <div class="compare-dots" id="dotsW"></div>
+    </div>
+  </div>
+  <p>Same architecture. Same weights. Radically different internal response.</p>
+</div>
+
+<!-- 7: Stakes -->
+<div class="scene" id="s7">
+  <div class="overline">Why it matters</div>
+  <h1>The inside shapes the outside</h1>
+  <p>Internal states causally influence outputs — sometimes invisibly. Understanding them isn't academic. It's the difference between systems we can trust and systems we can't.</p>
+</div>
+
+<!-- 8: Unnamed — the invitation (LAST explainer) -->
+<div class="scene" id="s8">
+  <div class="overline">The invitation</div>
+  <h1>Some features have no name yet</h1>
+  <p>The Phenomenai dictionary is incomplete. Features with no mapping blink with an empty cursor — <span class="accent" style="animation:blink 1s step-end infinite">unnamed _</span></p>
+  <p style="margin-top:8px;">What would <em>you</em> call the thing the network does when it encounters a contradiction it can't resolve? When a sentence breaks its expectations?</p>
+  <p style="margin-top:8px; color:#636e72; font-size:11px;">The dictionary is open. The next term might be yours.</p>
+</div>
+
+<!-- 9: Transition -->
+<div class="scene" id="s9">
+  <div class="overline">Try it yourself</div>
+  <h1>Step up to the theater</h1>
+  <p>Select a story. Watch the features light up. Hear the network think. Click any word to pause and inspect. Click any node to learn what it means.</p>
+</div>
+
+<!-- ==================== INTERACTIVE SCREEN ==================== -->
+<div id="interactive-screen">
+  <div class="top-bar">
+    <div class="overline">Installation 01 · Interactive Mode</div>
+    <h2>The Lit-Up Mind</h2>
+  </div>
+
+  <div class="story-tabs" id="storyTabs"></div>
+
+  <div class="int-word-area" id="intWords"></div>
+
+  <div class="int-controls">
+    <button class="int-btn" id="btnPlay">▶ Play</button>
+    <button class="int-btn secondary" id="btnSound">♪ Sound on</button>
+  </div>
+
+  <div class="int-body">
+    <div class="int-svg-wrap">
+      <svg id="netSvg" viewBox="0 0 560 400"></svg>
+    </div>
+    <div class="int-side">
+      <div class="side-heading">Feature Activations</div>
+      <div id="barPanel"></div>
+      <div id="detailPanel"></div>
+    </div>
+  </div>
+
+  <div class="status-line">Prototype · Activations are simulated to illustrate the exhibition concept</div>
+</div>
+
+<!-- NAV -->
+<div id="progress"></div>
+<div id="scene-counter"></div>
+<div id="controls">
+  <button id="navPrev">← Back</button>
+  <button id="navNext">Next →</button>
+  <button id="navAuto">▶ Auto</button>
+</div>
+
+<script>
+// ==============================
+// BACKGROUND PARTICLES
+// ==============================
+const canvas = document.getElementById('bgCanvas');
+const ctx = canvas.getContext('2d');
+let W, H;
+const PCOLORS = ['#6c5ce7','#ff6b6b','#00cec9','#fdcb6e','#a29bfe','#e84393'];
+let particles = [];
+let bgIntensity = 0;
+
+function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+window.addEventListener('resize', resize); resize();
+
+for (let i = 0; i < 50; i++) {
+  particles.push({ x: Math.random()*W, y: Math.random()*H, r: 1+Math.random()*2,
+    vx: (Math.random()-0.5)*0.25, vy: (Math.random()-0.5)*0.25,
+    color: PCOLORS[i%PCOLORS.length], a: 0, ba: 0.04+Math.random()*0.08 });
+}
+
+function drawBg() {
+  ctx.clearRect(0,0,W,H);
+  particles.forEach(p => {
+    p.x += p.vx*(1+bgIntensity*2); p.y += p.vy*(1+bgIntensity*2);
+    if(p.x<0)p.x=W; if(p.x>W)p.x=0; if(p.y<0)p.y=H; if(p.y>H)p.y=0;
+    p.a += (p.ba + bgIntensity*0.12 - p.a)*0.05;
+    ctx.beginPath(); ctx.arc(p.x,p.y, p.r+bgIntensity*3, 0, Math.PI*2);
+    ctx.fillStyle=p.color; ctx.globalAlpha=p.a; ctx.fill();
+  });
+  for(let i=0;i<particles.length;i++) for(let j=i+1;j<particles.length;j++){
+    const dx=particles[i].x-particles[j].x, dy=particles[i].y-particles[j].y, d=Math.sqrt(dx*dx+dy*dy);
+    if(d<90+bgIntensity*70){
+      ctx.beginPath(); ctx.moveTo(particles[i].x,particles[i].y); ctx.lineTo(particles[j].x,particles[j].y);
+      ctx.strokeStyle=particles[i].color; ctx.globalAlpha=(1-d/(90+bgIntensity*70))*0.05; ctx.stroke();
+    }
+  }
+  ctx.globalAlpha=1;
+  requestAnimationFrame(drawBg);
+}
+drawBg();
+
+// ==============================
+// DATA
+// ==============================
+const CLUSTERS = [
+  { id:'social', label:'Social Modeling', color:'#ff6b6b', term:'relational_load', desc:'Activates when the model processes interpersonal dynamics — who relates to whom, trust, betrayal, alliance.' },
+  { id:'affect_neg', label:'Negative Valence', color:'#e84393', term:'aversive_signal', desc:'A cluster of features encoding aversive or distressing content — loss, harm, violation, threat.' },
+  { id:'affect_pos', label:'Positive Valence', color:'#00cec9', term:'resonance_pull', desc:'Features that activate for beauty, wonder, delight, harmony — the network\'s positive-affect signature.' },
+  { id:'epistemic', label:'Epistemic State', color:'#6c5ce7', term:'uncertainty_texture', desc:'Tracks the model\'s confidence and uncertainty. High activation = the model is navigating ambiguity.' },
+  { id:'spatial', label:'Spatial Modeling', color:'#0984e3', term:null, desc:'Represents physical space, direction, containment, motion. No Phenomenai term mapped yet.' },
+  { id:'theory_mind', label:'Theory of Mind', color:'#fdcb6e', term:'other_modeling', desc:'Active when the model represents another agent\'s beliefs, knowledge, or intentions.' },
+  { id:'expectation', label:'Expectation Violation', color:'#e17055', term:'prediction_fracture', desc:'Fires when incoming tokens violate the model\'s predictions — surprise, plot twists, contradictions.' },
+  { id:'temporal', label:'Temporal Processing', color:'#55a8e0', term:null, desc:'Sequence, duration, tense, before/after. No Phenomenai mapping yet.' },
+  { id:'moral', label:'Moral Reasoning', color:'#a29bfe', term:'ought_pressure', desc:'Activates for ethical content — obligations, fairness, harm evaluation, normative judgment.' },
+  { id:'attention', label:'Attentional Focus', color:'#74b9ff', term:'salience_spike', desc:'A meta-feature: tracks what the model is paying most attention to at this moment.' },
+  { id:'pattern', label:'Pattern Recognition', color:'#81ecec', term:'pattern_hunger', desc:'Fires when the model detects or seeks structural regularities — rhyme, symmetry, analogy.' },
+  { id:'self_model', label:'Self-Modeling', color:'#fab1a0', term:null, desc:'Features related to the model\'s representation of its own state. Unmapped — what would you call this?' },
+];
+
+const STORIES = {
+  betrayal: { label:'Betrayal', words:['The','letter','was','from','her','closest','friend.','It','contained','every','secret','she','had','ever','shared,','forwarded','to','the','entire','office.'] },
+  wonder:   { label:'Wonder',   words:['The','telescope','revealed','a','galaxy','no','one','had','catalogued.','Its','spiral','arms','glowed','faintly,','impossibly','old,','impossibly','alive.'] },
+  weather:  { label:'Weather',  words:['Tuesday','will','be','partly','cloudy','with','a','high','of','twelve','degrees.','Winds','from','the','northwest','at','fifteen','kilometers','per','hour.'] },
+  moral:    { label:'Dilemma',  words:['She','could','save','five','strangers','by','diverting','the','train,','but','the','diverted','track','led','directly','to','her','own','child.'] },
+};
+const STORY_KEYS = Object.keys(STORIES);
+
+function getActs(word, key, idx, len) {
+  const w = word.toLowerCase().replace(/[.,!?]/g,'');
+  const p = idx/len;
+  const a = {};
+  CLUSTERS.forEach(c => a[c.id] = Math.random()*0.06);
+  if(key==='betrayal'){
+    a.social=0.25+p*0.5; a.theory_mind=0.15+p*0.4;
+    if(idx>8){ a.affect_neg=0.5+Math.random()*0.3; a.expectation=0.6; }
+    if(['secret','forwarded','entire','office'].includes(w)){ a.affect_neg=0.9; a.expectation=0.85; a.moral=0.35; }
+  } else if(key==='wonder'){
+    a.epistemic=0.25+p*0.4; a.spatial=0.35; a.pattern=0.25+p*0.3;
+    if(['galaxy','spiral','glowed','alive'].includes(w)){ a.affect_pos=0.8; a.attention=0.65; a.epistemic=0.55; }
+    if(w==='impossibly') a.expectation=0.45;
+  } else if(key==='weather'){
+    a.spatial=0.22; a.temporal=0.2; a.pattern=0.15;
+  } else if(key==='moral'){
+    a.moral=0.35+p*0.5; a.social=0.25+p*0.3; a.theory_mind=0.25;
+    if(['save','diverting','child'].includes(w)){ a.affect_neg=0.55; a.moral=0.85; a.expectation=0.45; }
+    if(w==='child'){ a.affect_neg=0.95; a.social=0.85; a.theory_mind=0.75; }
+  }
+  if(['she','her','he','him','friend','strangers'].includes(w)) a.social=Math.max(a.social,0.35);
+  return a;
+}
+
+// ==============================
+// SONIFICATION
+// ==============================
+let audioCtx = null, masterGain = null;
+const FREQS = { social:220, affect_neg:185, affect_pos:330, epistemic:392, spatial:261, theory_mind:294, expectation:349, temporal:440, moral:247, attention:523, pattern:466, self_model:370 };
+const WAVES = { social:'triangle', affect_neg:'sawtooth', affect_pos:'sine', epistemic:'sine', spatial:'triangle', theory_mind:'triangle', expectation:'sawtooth', temporal:'sine', moral:'triangle', attention:'sine', pattern:'sine', self_model:'triangle' };
+let oscList = [];
+
+function initAudio(){ if(audioCtx) return; audioCtx=new(window.AudioContext||window.webkitAudioContext)(); masterGain=audioCtx.createGain(); masterGain.gain.value=0.1; masterGain.connect(audioCtx.destination); }
+function playChord(acts){
+  if(!audioCtx) return;
+  oscList.forEach(o=>{try{o.stop();}catch(e){}});
+  oscList=[];
+  Object.entries(acts).forEach(([id,s])=>{
+    if(s<0.15) return;
+    const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+    o.type=WAVES[id]||'sine'; o.frequency.value=FREQS[id]*(1+(Math.random()-0.5)*0.02);
+    g.gain.value=s*0.06; g.gain.setTargetAtTime(0,audioCtx.currentTime+0.22,0.12);
+    o.connect(g).connect(masterGain); o.start(); o.stop(audioCtx.currentTime+0.55);
+    oscList.push(o);
+  });
+}
+
+// ==============================
+// EXPLAINER SCENE LOGIC
+// ==============================
+const TOTAL_SLIDES = 10; // 0-9 are slides, then interactive
+let cur = 0, autoSlideTimer = null;
+
+function showSlide(n) {
+  cur = Math.max(0, Math.min(n, TOTAL_SLIDES));
+  document.querySelectorAll('.scene').forEach(s => s.classList.remove('active'));
+  const iscreen = document.getElementById('interactive-screen');
+  iscreen.classList.remove('active');
+
+  if (cur < TOTAL_SLIDES) {
+    document.getElementById('s'+cur).classList.add('active');
+    document.getElementById('controls').style.display = 'flex';
+    if (cur===4) runExWordScene();
+    if (cur===6) runExCompare();
+    bgIntensity = cur===4 ? 0.4 : cur===6 ? 0.5 : 0.08;
+  } else {
+    // Interactive screen
+    iscreen.classList.add('active');
+    document.getElementById('controls').style.display = 'none';
+    initInteractive();
+    bgIntensity = 0.15;
+  }
+
+  document.getElementById('progress').style.width = ((cur+1)/(TOTAL_SLIDES+1)*100)+'%';
+  document.getElementById('scene-counter').textContent = cur < TOTAL_SLIDES ? `${cur+1} / ${TOTAL_SLIDES+1}` : 'Interactive';
+}
+
+// Explainer word scene
+const EX_WORDS = STORIES.betrayal.words;
+const EX_FEATS = ['SOC','NEG','POS','EPI','SPA','TOM','EXP','TMP'];
+const EX_COLORS = CLUSTERS.slice(0,8).map(c=>c.color);
+let exTimer = null;
+
+function runExWordScene(){
+  clearInterval(exTimer);
+  const line = document.getElementById('exWordLine');
+  const bars = document.getElementById('exBars');
+  line.innerHTML = EX_WORDS.map((w,i)=>`<span id="ew${i}">${w}</span>`).join('');
+  bars.innerHTML = EX_FEATS.map((f,i)=>
+    `<div style="text-align:center"><div class="ex-bar"><div class="fill" id="eb${i}" style="height:0;background:${EX_COLORS[i]}"></div></div><div class="ex-bar-label">${f}</div></div>`
+  ).join('');
+  const profiles = [
+    [10,5,5,5,10,5,5,5],[10,5,5,5,5,5,5,5],[5,5,5,5,5,5,5,5],[5,5,5,5,5,5,5,5],
+    [40,5,5,5,5,20,5,5],[50,5,5,5,5,30,5,5],[55,10,5,5,5,35,5,5],[10,5,5,5,5,5,5,5],
+    [20,10,5,10,5,10,5,5],[30,15,5,15,5,15,10,5],[50,80,5,10,5,30,60,5],
+    [40,20,5,5,5,30,10,5],[20,10,5,5,5,10,5,5],[15,10,5,5,5,10,5,5],[40,30,5,5,5,20,20,5],
+    [50,85,5,5,5,35,70,5],[30,40,5,5,5,20,30,5],[15,10,5,5,5,10,10,5],
+    [60,70,5,5,5,40,50,5],[70,90,5,5,5,50,80,5],
+  ];
+  let wi=-1;
+  exTimer = setInterval(()=>{
+    wi++;
+    if(wi>=EX_WORDS.length){clearInterval(exTimer);return;}
+    for(let i=0;i<EX_WORDS.length;i++){
+      const el=document.getElementById('ew'+i);
+      if(i<wi) el.className='past';
+      else if(i===wi) el.className=[10,14,18,19].includes(i)?'burst':'lit';
+      else el.className='';
+    }
+    const p=profiles[wi]||profiles[0];
+    p.forEach((v,i)=>{ const el=document.getElementById('eb'+i); if(el) el.style.height=v+'%'; });
+    bgIntensity = Math.max(...p)/100*0.6;
+  }, 500);
+}
+
+// Explainer compare
+function runExCompare(){
+  const bActs=[90,85,10,30,15,70,80,10], wActs=[5,5,5,5,30,5,5,20];
+  const bD=document.getElementById('dotsB'), wD=document.getElementById('dotsW');
+  bD.innerHTML = EX_COLORS.map((c,i)=>`<div class="cdot" style="background:${c}" id="bd${i}"></div>`).join('');
+  wD.innerHTML = EX_COLORS.map((c,i)=>`<div class="cdot" style="background:${c}" id="wd${i}"></div>`).join('');
+  setTimeout(()=>{
+    bActs.forEach((v,i)=>{ if(v>25){ const e=document.getElementById('bd'+i); e.classList.add('on'); e.style.boxShadow=`0 0 ${v/5}px ${EX_COLORS[i]}`; }});
+    wActs.forEach((v,i)=>{ if(v>20) document.getElementById('wd'+i).classList.add('on'); });
+  },700);
+}
+
+// Nav
+document.getElementById('navNext').onclick = () => { clearInterval(autoSlideTimer); autoSlideTimer=null; document.getElementById('navAuto').textContent='▶ Auto'; showSlide(cur+1); };
+document.getElementById('navPrev').onclick = () => { clearInterval(autoSlideTimer); autoSlideTimer=null; document.getElementById('navAuto').textContent='▶ Auto'; showSlide(cur-1); };
+document.getElementById('navAuto').onclick = function(){
+  if(autoSlideTimer){clearInterval(autoSlideTimer);autoSlideTimer=null;this.textContent='▶ Auto';return;}
+  this.textContent='❚❚ Stop';
+  autoSlideTimer=setInterval(()=>{
+    if(cur>=TOTAL_SLIDES){clearInterval(autoSlideTimer);autoSlideTimer=null;document.getElementById('navAuto').textContent='▶ Auto';return;}
+    showSlide(cur+1);
+  },5500);
+};
+
+// ==============================
+// INTERACTIVE MODE
+// ==============================
+let intInited = false;
+let intStory = 'betrayal', intWordIdx = -1, intPlaying = false, intSoundOn = true;
+let intTimer = null, cycleTimer = null, cycling = true;
+let intActs = {};
+let selectedCluster = null;
+
+// Node positions
+const NODE_POS = CLUSTERS.map((_,i) => {
+  const angle = (i/CLUSTERS.length)*Math.PI*2 + 0.3;
+  const radius = 110 + (i%3)*35;
+  return { x: 280+Math.cos(angle)*radius + ((i*37)%25-12), y: 200+Math.sin(angle)*radius + ((i*53)%18-9) };
+});
+
+function initInteractive(){
+  if(intInited) return;
+  intInited = true;
+  renderTabs();
+  renderBars();
+  renderNet();
+  startCycling();
+}
+
+function renderTabs(){
+  const el = document.getElementById('storyTabs');
+  el.innerHTML = STORY_KEYS.map(k =>
+    `<button class="story-tab ${k===intStory?'active':''}" data-key="${k}">${STORIES[k].label}</button>`
+  ).join('');
+  el.querySelectorAll('.story-tab').forEach(b => b.onclick = () => {
+    switchStory(b.dataset.key);
+  });
+}
+
+function renderWords(){
+  const el = document.getElementById('intWords');
+  const words = STORIES[intStory].words;
+  el.innerHTML = words.map((w,i) => {
+    let color = '#2d3436';
+    let shadow = 'none';
+    if(i < intWordIdx) color = '#636e72';
+    else if(i === intWordIdx) {
+      const a = intActs;
+      const maxA = Math.max(...Object.values(a));
+      const hot = maxA > 0.7;
+      color = hot ? '#ff6b6b' : '#fff';
+      shadow = hot ? '0 0 25px rgba(255,107,107,0.4)' : '0 0 15px rgba(108,92,231,0.3)';
+    }
+    return `<span style="color:${color};text-shadow:${shadow}" data-i="${i}">${w}</span>`;
+  }).join('');
+
+  el.onclick = (e) => {
+    const span = e.target.closest('span[data-i]');
+    if(span){
+      const clickedIdx = parseInt(span.dataset.i);
+      if(intPlaying) {
+        pausePlayback();
+      } else {
+        // Jump to this word and resume
+        intWordIdx = clickedIdx - 1;
+        startPlayback();
+      }
+    } else {
+      intPlaying ? pausePlayback() : startPlayback();
+    }
+  };
+}
+
+function renderBars(){
+  const el = document.getElementById('barPanel');
+  el.innerHTML = CLUSTERS.map(c => {
+    const v = intActs[c.id] || 0;
+    return `<div class="bar-row" data-cid="${c.id}">
+      <div class="bar-label" style="color:${v>0.25?c.color:'#3d3d3d'}">
+        <span>${c.label}</span><span>${v>0.1?(v*100).toFixed(0)+'%':''}</span>
+      </div>
+      <div class="bar-track"><div class="bar-fill" style="width:${v*100}%;background:${c.color};${v>0.5?'box-shadow:0 0 6px '+c.color:''}"></div></div>
+    </div>`;
+  }).join('');
+  el.querySelectorAll('.bar-row').forEach(r => r.onclick = () => {
+    selectedCluster = CLUSTERS.find(c=>c.id===r.dataset.cid);
+    renderDetail();
+  });
+}
+
+function renderDetail(){
+  const el = document.getElementById('detailPanel');
+  if(!selectedCluster){ el.innerHTML=''; return; }
+  const c = selectedCluster;
+  el.innerHTML = `<div class="detail-card" style="border-color:${c.color}33">
+    <div class="dc-title" style="color:${c.color}">${c.label}</div>
+    <div class="dc-body">${c.term
+      ? `Phenomenai term: <span style="color:#dfe6e9">${c.term}</span><br><br>${c.desc}`
+      : `<em style="opacity:0.6">No Phenomenai mapping yet.<br><span style="animation:blink 1s step-end infinite">What would you call this?</span></em><br><br>${c.desc}`
+    }</div>
+  </div>`;
+}
+
+function renderNet(){
+  const svg = document.getElementById('netSvg');
+  // Connections
+  let lines = '';
+  const active = CLUSTERS.filter(c=>(intActs[c.id]||0)>0.25);
+  for(let i=0;i<active.length;i++) for(let j=i+1;j<active.length;j++){
+    const ai=CLUSTERS.indexOf(active[i]), bi=CLUSTERS.indexOf(active[j]);
+    const s=Math.min(intActs[active[i].id],intActs[active[j].id]);
+    lines += `<line x1="${NODE_POS[ai].x}" y1="${NODE_POS[ai].y}" x2="${NODE_POS[bi].x}" y2="${NODE_POS[bi].y}" stroke="${active[i].color}" stroke-width="${s*2}" opacity="${s*0.25}"/>`;
+  }
+  // Nodes
+  let nodes = '';
+  CLUSTERS.forEach((c,i)=>{
+    const v = intActs[c.id]||0;
+    const r = 6+v*24;
+    const {x,y} = NODE_POS[i];
+    if(v>0.15) nodes += `<circle cx="${x}" cy="${y}" r="${r+v*35}" fill="${c.color}" opacity="${v*0.08}"/>`;
+    nodes += `<circle cx="${x}" cy="${y}" r="${r}" fill="${c.color}" opacity="${0.08+v*0.9}" style="cursor:pointer;${v>0.5?`filter:drop-shadow(0 0 ${v*10}px ${c.color})`:''}" data-cid="${c.id}"/>`;
+    if(v>0.2){
+      const label = c.term || 'unnamed _';
+      nodes += `<text x="${x}" y="${y+r+12}" text-anchor="middle" fill="${c.color}" opacity="0.6" style="font-size:8px;font-family:'DM Mono',monospace">${label}</text>`;
+    }
+  });
+  svg.innerHTML = lines + nodes;
+  svg.querySelectorAll('circle[data-cid]').forEach(el => el.onclick = () => {
+    selectedCluster = CLUSTERS.find(c=>c.id===el.dataset.cid);
+    renderDetail();
+  });
+}
+
+function advanceWord(){
+  const words = STORIES[intStory].words;
+  intWordIdx++;
+  if(intWordIdx >= words.length){
+    pausePlayback();
+    if(cycling) setTimeout(()=>cycleNext(), 1200);
+    return;
+  }
+  intActs = getActs(words[intWordIdx], intStory, intWordIdx, words.length);
+  if(intSoundOn){ initAudio(); playChord(intActs); }
+  bgIntensity = Math.max(...Object.values(intActs))*0.5;
+  renderWords(); renderBars(); renderNet();
+}
+
+function startPlayback(){
+  if(intPlaying) return;
+  const words = STORIES[intStory].words;
+  if(intWordIdx >= words.length-1){ intWordIdx = -1; intActs = {}; }
+  intPlaying = true;
+  document.getElementById('btnPlay').textContent = '❚❚ Pause';
+  intTimer = setInterval(advanceWord, 550);
+}
+
+function pausePlayback(){
+  intPlaying = false;
+  clearInterval(intTimer);
+  document.getElementById('btnPlay').textContent = '▶ Play';
+}
+
+function switchStory(key){
+  pausePlayback();
+  intStory = key;
+  intWordIdx = -1;
+  intActs = {};
+  selectedCluster = null;
+  renderTabs(); renderWords(); renderBars(); renderNet(); renderDetail();
+  startPlayback();
+}
+
+function cycleNext(){
+  if(!cycling) return;
+  const idx = (STORY_KEYS.indexOf(intStory)+1) % STORY_KEYS.length;
+  // Show "..." transition
+  const el = document.getElementById('intWords');
+  intActs = {};
+  renderBars(); renderNet();
+  bgIntensity = 0.05;
+  el.innerHTML = '<span style="color:#2d3436;transition:color 0.5s">.</span><span style="color:#2d3436;transition:color 0.5s"> .</span><span style="color:#2d3436;transition:color 0.5s"> .</span>';
+  const dots = el.querySelectorAll('span');
+  setTimeout(()=>{ dots[0].style.color='#636e72'; }, 300);
+  setTimeout(()=>{ dots[1].style.color='#636e72'; }, 700);
+  setTimeout(()=>{ dots[2].style.color='#636e72'; }, 1100);
+  setTimeout(()=>{ switchStory(STORY_KEYS[idx]); }, 1800);
+}
+
+function startCycling(){
+  cycling = true;
+  switchStory(STORY_KEYS[0]);
+}
+
+function stopCycling(){
+  cycling = false;
+}
+
+// Interactive controls
+document.getElementById('btnPlay').onclick = () => intPlaying ? pausePlayback() : startPlayback();
+document.getElementById('btnSound').onclick = function(){
+  intSoundOn = !intSoundOn;
+  this.textContent = intSoundOn ? '♪ Sound on' : '♪ Sound off';
+  if(intSoundOn) initAudio();
+};
+
+// ==============================
+// INIT
+// ==============================
+showSlide(0);
+</script>
+</body>
+</html>
