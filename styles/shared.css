@@ -1,0 +1,71 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@300;400;500&display=swap');
+
+:root {
+  --bg: #05080f;
+  --text: #c8d6e5;
+  --text-secondary: #b2bec3;
+  --text-muted: #636e72;
+  --border: #2d3436;
+  --accent: #a29bfe;
+  --warm: #fdcb6e;
+  --red: #ff6b6b;
+  --teal: #00cec9;
+
+  --font-heading: 'Playfair Display', serif;
+  --font-body: 'DM Mono', monospace;
+
+  --nav-height: 48px;
+}
+
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Shared typography */
+.heading {
+  font-family: var(--font-heading);
+  font-weight: 400;
+  font-style: italic;
+}
+
+.overline {
+  font-family: var(--font-body);
+  font-size: 10px;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* Shared animations */
+@keyframes blink {
+  50% { opacity: 0; }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Transition utility */
+.fade-in {
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+.fade-in.visible {
+  opacity: 1;
+}
