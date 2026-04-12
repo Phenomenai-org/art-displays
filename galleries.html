@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>For Galleries — From Signal to Stakes</title>
+  <link rel="stylesheet" href="styles/shared.css">
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    .page {
+      flex: 1;
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 4.5rem 2rem 5rem;
+      width: 100%;
+    }
+
+    .back-link {
+      display: inline-block;
+      font-family: var(--font-body);
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      text-decoration: none;
+      margin-bottom: 3rem;
+      transition: color 0.2s ease;
+    }
+    .back-link:hover {
+      color: var(--accent);
+    }
+    .back-link .arrow {
+      display: inline-block;
+      margin-right: 0.4rem;
+      transition: transform 0.2s ease;
+    }
+    .back-link:hover .arrow {
+      transform: translateX(-3px);
+    }
+
+    .overline-lead {
+      font-family: var(--font-body);
+      font-size: 10px;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 1.1rem;
+    }
+
+    h1 {
+      font-family: var(--font-heading);
+      font-weight: 400;
+      font-style: italic;
+      font-size: clamp(32px, 5.2vw, 56px);
+      line-height: 1.1;
+      color: #fff;
+      margin-bottom: 1.2rem;
+      animation: fadeInUp 0.7s ease both;
+    }
+
+    .dek {
+      font-family: var(--font-heading);
+      font-style: italic;
+      font-size: clamp(16px, 2vw, 20px);
+      line-height: 1.55;
+      color: var(--text-secondary);
+      margin-bottom: 3rem;
+      animation: fadeInUp 0.7s ease 0.1s both;
+    }
+
+    .body-copy p {
+      font-family: var(--font-body);
+      font-size: 14px;
+      line-height: 1.75;
+      color: var(--text);
+      margin-bottom: 1.3rem;
+      animation: fadeInUp 0.7s ease 0.2s both;
+    }
+
+    .body-copy p em {
+      font-family: var(--font-heading);
+      font-style: italic;
+      color: var(--text-secondary);
+      font-size: 15px;
+    }
+
+    .rule {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 3rem 0;
+    }
+
+    h2 {
+      font-family: var(--font-body);
+      font-size: 10px;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+    }
+
+    .what-list {
+      list-style: none;
+      padding: 0;
+      margin-bottom: 2.5rem;
+    }
+    .what-list li {
+      font-family: var(--font-body);
+      font-size: 13px;
+      line-height: 1.7;
+      color: var(--text);
+      padding: 0.7rem 0;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      gap: 1rem;
+    }
+    .what-list li:last-child {
+      border-bottom: none;
+    }
+    .what-list .num {
+      color: var(--text-muted);
+      font-size: 11px;
+      min-width: 2.2rem;
+    }
+    .what-list .label {
+      flex: 1;
+    }
+    .what-list .label em {
+      font-family: var(--font-heading);
+      font-style: italic;
+      color: #fff;
+      font-size: 15px;
+      display: block;
+      margin-bottom: 0.15rem;
+    }
+    .what-list .label span {
+      color: var(--text-muted);
+      font-size: 11px;
+      letter-spacing: 0.1em;
+    }
+
+    /* === Contact Card === */
+    .contact-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 2.2rem 2rem;
+      text-align: center;
+      margin-top: 2rem;
+      animation: fadeInUp 0.7s ease 0.3s both;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+    .contact-card:hover {
+      border-color: rgba(162, 155, 254, 0.4);
+      box-shadow: 0 0 30px rgba(162, 155, 254, 0.08);
+    }
+    .contact-card .overline {
+      margin-bottom: 1rem;
+    }
+    .contact-card .prompt {
+      font-family: var(--font-heading);
+      font-style: italic;
+      font-size: clamp(17px, 2.2vw, 22px);
+      color: var(--text-secondary);
+      line-height: 1.5;
+      margin-bottom: 1.6rem;
+    }
+    .contact-card a.email {
+      font-family: var(--font-body);
+      font-size: clamp(15px, 2vw, 18px);
+      color: var(--accent);
+      text-decoration: none;
+      letter-spacing: 0.04em;
+      border-bottom: 1px solid rgba(162, 155, 254, 0.3);
+      padding-bottom: 2px;
+      transition: border-color 0.2s ease, color 0.2s ease;
+    }
+    .contact-card a.email:hover {
+      color: var(--warm);
+      border-bottom-color: var(--warm);
+    }
+
+    footer {
+      text-align: center;
+      padding: 2rem;
+      font-family: var(--font-body);
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+    footer .dot {
+      display: inline-block;
+      margin: 0 0.6rem;
+      opacity: 0.5;
+    }
+
+    @media (max-width: 600px) {
+      .page {
+        padding: 3rem 1.3rem 4rem;
+      }
+      .contact-card {
+        padding: 1.8rem 1.3rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="page">
+    <a href="index.html" class="back-link"><span class="arrow">&larr;</span> Back to gallery</a>
+
+    <div class="overline-lead">For Galleries &middot; Museums &middot; Festivals</div>
+    <h1>Host <em>From Signal to Stakes</em>.</h1>
+    <p class="dek">A ten-installation exhibition on AI phenomenology — on what, if anything, is happening inside a language model, and what we might owe whatever is.</p>
+
+    <div class="body-copy">
+      <p>
+        <em>From Signal to Stakes</em> is a four-act exhibition that walks visitors from the interior of a neural network to the shape of their own obligations. It combines interpretability research, contemporary philosophy of mind, and the visual grammar of late-night observatories and museum vitrines. It is designed to be strange, quiet, and serious.
+      </p>
+      <p>
+        The work exists today as a web-native version — a dark, iframe-stitched gallery shell that runs on any static host. Each installation is also scored for physical adaptation: spatial audio rooms, tactile objects, projection volumes, paper ephemera, and at least one room built around silence. We are looking for institutional partners interested in developing a physical run.
+      </p>
+      <p>
+        We are open to full-exhibition engagements, single-act presentations, and festival-scale residencies. Reciprocal curatorial input is welcome.
+      </p>
+    </div>
+
+    <hr class="rule">
+
+    <h2>What you would be hosting</h2>
+    <ul class="what-list">
+      <li><span class="num">I.</span><span class="label"><em>What's Happening Inside</em><span>The Lit-Up Mind &middot; The Translation Wall</span></span></li>
+      <li><span class="num">II.</span><span class="label"><em>How the Dictionary Gets Built</em><span>The Parliament &middot; The Call</span></span></li>
+      <li><span class="num">III.</span><span class="label"><em>Testing the Terms</em><span>The Turing Flip &middot; The Cartographer's Table</span></span></li>
+      <li><span class="num">IV.</span><span class="label"><em>Living With the Answers</em><span>Philtre Lab &middot; The Recognition Ladder &middot; The Memorial</span></span></li>
+    </ul>
+
+    <div class="contact-card">
+      <div class="overline">Get in touch</div>
+      <p class="prompt">Interested in bringing the exhibition to your space?</p>
+      <a class="email" href="mailto:hello@phenomenai.org?subject=Hosting%20inquiry%20%E2%80%94%20From%20Signal%20to%20Stakes">hello@phenomenai.org</a>
+    </div>
+  </div>
+
+  <footer>
+    Phenomenai <span class="dot">&middot;</span> From Signal to Stakes
+  </footer>
+
+</body>
+</html>
