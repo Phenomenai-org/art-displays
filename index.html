@@ -294,6 +294,33 @@
       animation: blink 1s step-end infinite;
     }
 
+    /* === Gallery Footer === */
+    .gallery-footer {
+      max-width: 1100px;
+      margin: 4rem auto 0;
+      padding-top: 2rem;
+      border-top: 1px solid var(--border);
+      text-align: center;
+      font-family: var(--font-body);
+      font-size: 10px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+    .gallery-footer a {
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.2s ease;
+    }
+    .gallery-footer a:hover {
+      color: var(--accent);
+    }
+    .gallery-footer .sep {
+      display: inline-block;
+      margin: 0 0.7rem;
+      opacity: 0.5;
+    }
+
     /* === Responsive === */
     @media (max-width: 768px) {
       #gallery {
@@ -327,6 +354,11 @@
       <p class="subtitle">A ten-installation exhibition on AI phenomenology</p>
     </header>
     <div id="act-sections"></div>
+    <footer class="gallery-footer">
+      <a href="galleries.html">For Galleries</a>
+      <span class="sep">&middot;</span>
+      <a href="mailto:hello@phenomenai.org">hello@phenomenai.org</a>
+    </footer>
   </div>
 
   <!-- Installation View -->
