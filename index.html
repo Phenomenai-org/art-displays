@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>From Signal to Stakes — Phenomenai Exhibition</title>
+  <link rel="stylesheet" href="styles/shared.css">
+  <style>
+    /* === Gallery View === */
+    #gallery {
+      min-height: 100vh;
+      padding: 3rem 2rem 4rem;
+      transition: opacity 0.5s ease;
+    }
+    #gallery.hidden {
+      opacity: 0;
+      pointer-events: none;
+      position: absolute;
+    }
+
+    .gallery-header {
+      text-align: center;
+      margin-bottom: 3.5rem;
+    }
+    .gallery-header h1 {
+      font-family: var(--font-heading);
+      font-weight: 400;
+      font-style: italic;
+      font-size: clamp(28px, 5vw, 52px);
+      color: #fff;
+      line-height: 1.2;
+    }
+    .gallery-header .subtitle {
+      font-size: clamp(11px, 1.4vw, 14px);
+      color: var(--text-muted);
+      margin-top: 10px;
+      letter-spacing: 0.08em;
+    }
+
+    /* === Act Sections === */
+    .act-section {
+      max-width: 1100px;
+      margin: 0 auto 3rem;
+    }
+    .act-label {
+      font-family: var(--font-body);
+      font-size: 10px;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 1.2rem;
+      padding-bottom: 0.6rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* === Cards Grid === */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.2rem;
+    }
+
+    /* === Installation Card === */
+    .card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.4rem;
+      transition: all 0.3s ease;
+    }
+    .card.ready {
+      cursor: pointer;
+    }
+    .card.ready:hover {
+      border-color: var(--accent);
+      box-shadow: 0 0 20px rgba(162, 155, 254, 0.08);
+      transform: translateY(-2px);
+    }
+    .card.placeholder {
+      opacity: 0.45;
+      cursor: default;
+    }
+    .card-number {
+      font-size: 11px;
+      color: var(--text-muted);
+      letter-spacing: 0.1em;
+      margin-bottom: 0.5rem;
+    }
+    .card-name {
+      font-family: var(--font-heading);
+      font-weight: 400;
+      font-style: italic;
+      font-size: clamp(18px, 2.5vw, 22px);
+      color: #fff;
+      margin-bottom: 0.3rem;
+    }
+    .card-modality {
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.8rem;
+    }
+    .card-question {
+      font-family: var(--font-heading);
+      font-style: italic;
+      font-size: clamp(12px, 1.4vw, 14px);
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+    .card-badge {
+      display: inline-block;
+      font-size: 9px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-top: 0.8rem;
+    }
+    .card-badge .cursor {
+      animation: blink 1s step-end infinite;
+    }
+
+    /* === Installation View === */
+    #installation-view {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 10;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.5s ease;
+      background: var(--bg);
+    }
+    #installation-view.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* Nav bar */
+    .nav-bar {
+      height: var(--nav-height);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 1rem;
+      background: rgba(5, 8, 15, 0.85);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border);
+      position: relative;
+      z-index: 11;
+    }
+    .nav-left, .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .nav-btn {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text-secondary);
+      font-family: var(--font-body);
+      font-size: 12px;
+      padding: 6px 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .nav-btn:hover {
+      border-color: var(--accent);
+      color: var(--text);
+    }
+    .nav-btn:disabled {
+      opacity: 0.3;
+      cursor: default;
+      border-color: var(--border);
+      color: var(--text-muted);
+    }
+    .nav-title {
+      font-family: var(--font-heading);
+      font-style: italic;
+      font-size: 16px;
+      color: var(--text);
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 50%;
+    }
+
+    /* Iframe */
+    #installation-iframe {
+      width: 100%;
+      height: calc(100vh - var(--nav-height));
+      border: none;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+    #installation-iframe.loaded {
+      opacity: 1;
+    }
+
+    /* === Coming Soon Modal === */
+    #modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(5, 8, 15, 0.85);
+      backdrop-filter: blur(4px);
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    #modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .modal-content {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2.5rem;
+      max-width: 440px;
+      width: 90%;
+      text-align: center;
+      position: relative;
+    }
+    .modal-close {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 18px;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+    .modal-close:hover {
+      color: var(--text);
+    }
+    .modal-number {
+      font-size: 11px;
+      color: var(--text-muted);
+      letter-spacing: 0.1em;
+      margin-bottom: 0.5rem;
+    }
+    .modal-name {
+      font-family: var(--font-heading);
+      font-weight: 400;
+      font-style: italic;
+      font-size: clamp(22px, 4vw, 32px);
+      color: #fff;
+      margin-bottom: 0.3rem;
+    }
+    .modal-act {
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 0.8rem;
+    }
+    .modal-modality {
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 1rem;
+    }
+    .modal-question {
+      font-family: var(--font-heading);
+      font-style: italic;
+      font-size: clamp(14px, 2vw, 17px);
+      color: var(--text-secondary);
+      line-height: 1.5;
+      margin-bottom: 1.5rem;
+    }
+    .modal-coming-soon {
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+    .modal-coming-soon .cursor {
+      animation: blink 1s step-end infinite;
+    }
+
+    /* === Responsive === */
+    @media (max-width: 768px) {
+      #gallery {
+        padding: 2rem 1rem 3rem;
+      }
+      .gallery-header {
+        margin-bottom: 2.5rem;
+      }
+      .cards-grid {
+        grid-template-columns: 1fr;
+      }
+      .nav-title {
+        font-size: 14px;
+        max-width: 40%;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .nav-right {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Gallery View -->
+  <div id="gallery">
+    <header class="gallery-header">
+      <h1>From Signal to Stakes</h1>
+      <p class="subtitle">A ten-installation exhibition on AI phenomenology</p>
+    </header>
+    <div id="act-sections"></div>
+  </div>
+
+  <!-- Installation View -->
+  <div id="installation-view">
+    <div class="nav-bar">
+      <div class="nav-left">
+        <button class="nav-btn" id="btn-back">&larr; Gallery</button>
+      </div>
+      <span class="nav-title" id="nav-title"></span>
+      <div class="nav-right">
+        <button class="nav-btn" id="btn-prev">&larr; Prev</button>
+        <button class="nav-btn" id="btn-next">Next &rarr;</button>
+      </div>
+    </div>
+    <iframe id="installation-iframe" title="Installation"></iframe>
+  </div>
+
+  <!-- Coming Soon Modal -->
+  <div id="modal-overlay">
+    <div class="modal-content">
+      <button class="modal-close" id="modal-close">&times;</button>
+      <div class="modal-number" id="modal-number"></div>
+      <div class="modal-name" id="modal-name"></div>
+      <div class="modal-act" id="modal-act"></div>
+      <div class="modal-modality" id="modal-modality"></div>
+      <div class="modal-question" id="modal-question"></div>
+      <div class="modal-coming-soon">Coming Soon<span class="cursor">|</span></div>
+    </div>
+  </div>
+
+  <script src="js/shell.js"></script>
+  <script>
+    // === DOM References ===
+    const galleryEl = document.getElementById('gallery');
+    const actSectionsEl = document.getElementById('act-sections');
+    const installationView = document.getElementById('installation-view');
+    const iframe = document.getElementById('installation-iframe');
+    const navTitle = document.getElementById('nav-title');
+    const btnBack = document.getElementById('btn-back');
+    const btnPrev = document.getElementById('btn-prev');
+    const btnNext = document.getElementById('btn-next');
+    const modalOverlay = document.getElementById('modal-overlay');
+    const modalClose = document.getElementById('modal-close');
+
+    let currentInstallation = null;
+
+    // === Render Gallery ===
+    function renderGallery() {
+      actSectionsEl.innerHTML = '';
+      ACTS.forEach(act => {
+        const installations = getInstallationsByAct(act.number);
+        const section = document.createElement('div');
+        section.className = 'act-section';
+        section.innerHTML = `
+          <div class="act-label">Act ${act.numeral}: ${act.title}</div>
+          <div class="cards-grid">
+            ${installations.map(inst => `
+              <div class="card ${inst.ready ? 'ready' : 'placeholder'}"
+                   data-id="${inst.id}" data-slug="${inst.slug}" data-ready="${inst.ready}">
+                <div class="card-number">${String(inst.id).padStart(2, '0')}</div>
+                <div class="card-name">${inst.name}</div>
+                <div class="card-modality">${inst.modality}</div>
+                <div class="card-question">${inst.question}</div>
+                ${inst.ready ? '' : '<div class="card-badge">Coming Soon<span class="cursor">|</span></div>'}
+              </div>
+            `).join('')}
+          </div>
+        `;
+        actSectionsEl.appendChild(section);
+      });
+
+      // Attach click handlers
+      document.querySelectorAll('.card').forEach(card => {
+        card.addEventListener('click', () => {
+          const id = parseInt(card.dataset.id);
+          const inst = getInstallationById(id);
+          if (inst.ready) {
+            openInstallation(inst);
+          } else {
+            showComingSoon(inst);
+          }
+        });
+      });
+    }
+
+    // === Open Installation ===
+    function openInstallation(inst) {
+      currentInstallation = inst;
+      navTitle.textContent = inst.name;
+
+      // Update prev/next buttons
+      const adj = getAdjacentReady(inst.id);
+      btnPrev.disabled = !adj.prev;
+      btnNext.disabled = !adj.next;
+      btnPrev.onclick = adj.prev ? () => openInstallation(adj.prev) : null;
+      btnNext.onclick = adj.next ? () => openInstallation(adj.next) : null;
+
+      // Load iframe
+      iframe.classList.remove('loaded');
+      iframe.src = `installations/${inst.slug}.html`;
+      iframe.onload = () => iframe.classList.add('loaded');
+
+      // Show installation view
+      galleryEl.classList.add('hidden');
+      installationView.classList.add('active');
+      document.body.style.overflow = 'hidden';
+
+      // Update URL
+      history.pushState({ installation: inst.slug }, '', `#installation-${inst.slug}`);
+    }
+
+    // === Close Installation ===
+    function closeInstallation() {
+      currentInstallation = null;
+      iframe.src = 'about:blank';
+      iframe.classList.remove('loaded');
+      installationView.classList.remove('active');
+      galleryEl.classList.remove('hidden');
+      document.body.style.overflow = '';
+      history.pushState(null, '', window.location.pathname);
+    }
+
+    // === Coming Soon Modal ===
+    function showComingSoon(inst) {
+      document.getElementById('modal-number').textContent = String(inst.id).padStart(2, '0');
+      document.getElementById('modal-name').textContent = inst.name;
+      document.getElementById('modal-act').textContent = `Act ${ACTS.find(a => a.number === inst.act).numeral}: ${inst.actTitle}`;
+      document.getElementById('modal-modality').textContent = inst.modality;
+      document.getElementById('modal-question').textContent = inst.question;
+      modalOverlay.classList.add('active');
+    }
+
+    function closeModal() {
+      modalOverlay.classList.remove('active');
+    }
+
+    // === Routing ===
+    function handleRoute() {
+      const hash = window.location.hash;
+      if (hash.startsWith('#installation-')) {
+        const slug = hash.replace('#installation-', '');
+        const inst = getInstallationBySlug(slug);
+        if (inst && inst.ready) {
+          openInstallation(inst);
+          return;
+        }
+      }
+      closeInstallation();
+    }
+
+    // === Event Listeners ===
+    btnBack.addEventListener('click', closeInstallation);
+    modalClose.addEventListener('click', closeModal);
+
+    modalOverlay.addEventListener('click', (e) => {
+      if (e.target === modalOverlay) closeModal();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        if (modalOverlay.classList.contains('active')) {
+          closeModal();
+        } else if (installationView.classList.contains('active')) {
+          closeInstallation();
+        }
+      }
+    });
+
+    window.addEventListener('popstate', handleRoute);
+
+    // === Initialize ===
+    renderGallery();
+    handleRoute();
+  </script>
+
+</body>
+</html>
