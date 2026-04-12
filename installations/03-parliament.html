@@ -1,46 +1,454 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>The Parliament — Phenomenai Exhibition</title>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=DM+Mono:wght@300;400&display=swap');
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      background: #05080f;
-      color: #c8d6e5;
-      font-family: 'DM Mono', monospace;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding: 2rem;
-    }
-    .number { font-size: 11px; color: #636e72; letter-spacing: 0.1em; margin-bottom: 0.5rem; }
-    h1 {
-      font-family: 'Playfair Display', serif;
-      font-weight: 400;
-      font-style: italic;
-      font-size: clamp(24px, 5vw, 40px);
-      color: #fff;
-      margin-bottom: 1.5rem;
-    }
-    .coming-soon {
-      font-size: 11px;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: #636e72;
-    }
-    .cursor { animation: blink 1s step-end infinite; }
-    @keyframes blink { 50% { opacity: 0; } }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Parliament — AI Debate on Phenomenology</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --text: #e8e6e1;
+    --text-dim: #7a7872;
+    --text-muted: #4a4842;
+    --ring: rgba(255,255,255,0.06);
+    --counter-bg: rgba(10,10,15,0.85);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif; overflow-x:hidden; min-height:100vh; }
+
+  .header { text-align:center; padding:2.5rem 1rem 1rem; }
+  .header h1 { font-family:'Cormorant Garamond',serif; font-size:2.4rem; font-weight:400; letter-spacing:0.04em; margin-bottom:0.3rem; }
+  .header .sub { font-family:'JetBrains Mono',monospace; font-size:0.7rem; font-weight:300; color:var(--text-dim); letter-spacing:0.15em; text-transform:uppercase; }
+
+  .stage { display:grid; grid-template-columns:1fr 400px; gap:1.5rem; max-width:1280px; margin:0 auto; padding:1.5rem; padding-bottom:5rem; overflow:visible; }
+
+  /* ARENA */
+  .arena { display:flex; align-items:center; justify-content:center; min-height:540px; overflow:visible; padding:60px; }
+  .arena-ring { width:460px; height:460px; border-radius:50%; border:1px solid var(--ring); position:relative; background:radial-gradient(circle,rgba(255,255,255,0.015) 0%,transparent 70%); overflow:visible; }
+  .arena-ring::before { content:''; position:absolute; inset:35px; border-radius:50%; border:1px dashed rgba(255,255,255,0.04); }
+  .arena-ring::after { content:'DEBATE FLOOR'; position:absolute; top:50%;left:50%; transform:translate(-50%,-50%); font-family:'JetBrains Mono',monospace; font-size:0.5rem; letter-spacing:0.3em; color:var(--text-muted); }
+
+  .seat { position:absolute; width:90px; display:flex; flex-direction:column; align-items:center; cursor:pointer; transition:transform 0.3s ease; }
+  .seat:hover { transform:translate(-50%,-50%) scale(1.08) !important; }
+  .seat.speaking .holo-figure { opacity:1; }
+  .seat.speaking .seat-name { opacity:1; }
+
+  .holo-figure { width:52px; height:68px; border-radius:8px 8px 2px 2px; position:relative; opacity:0.3; transition:opacity 0.8s ease, box-shadow 0.8s ease; overflow:hidden; }
+  .holo-figure::after { content:''; position:absolute; inset:0; background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.12) 2px,rgba(0,0,0,0.12) 4px); pointer-events:none; }
+  .holo-figure .head { position:absolute; top:8px; left:50%; transform:translateX(-50%); width:16px; height:16px; border-radius:50%; opacity:0.6; }
+  .holo-figure .silhouette { position:absolute; bottom:0; left:50%; transform:translateX(-50%); width:28px; height:44px; border-radius:14px 14px 4px 4px; opacity:0.45; }
+
+  .seat-name { font-family:'JetBrains Mono',monospace; font-size:0.55rem; letter-spacing:0.06em; margin-top:5px; opacity:0.35; transition:opacity 0.8s ease; text-align:center; white-space:nowrap; }
+
+  /* Empty chair */
+  .seat.empty-chair .holo-figure { background:transparent !important; border:2px dashed rgba(255,255,255,0.15); box-shadow:none !important; opacity:0.35; }
+  .seat.empty-chair .holo-figure .head, .seat.empty-chair .holo-figure .silhouette { display:none; }
+  .seat.empty-chair .holo-figure::after { display:none; }
+  .seat.empty-chair .holo-figure::before { content:'?'; position:absolute; top:50%;left:50%; transform:translate(-50%,-50%); font-family:'Cormorant Garamond',serif; font-size:1.6rem; color:rgba(255,255,255,0.2); }
+  .seat.empty-chair .seat-name { font-style:italic; color:var(--text-muted); }
+  .seat.empty-chair.filled .holo-figure { border:none; opacity:0.3; background:var(--fill-bg) !important; transition:opacity 0.8s ease, box-shadow 0.8s ease; }
+  .seat.empty-chair.filled .holo-figure .head, .seat.empty-chair.filled .holo-figure .silhouette { display:block; }
+  .seat.empty-chair.filled .holo-figure::after { display:block; }
+  .seat.empty-chair.filled .holo-figure::before { display:none; }
+  .seat.empty-chair.filled .seat-name { font-style:normal; }
+
+
+  /* PANELS */
+  .panel-right { display:flex; flex-direction:column; gap:1.1rem; }
+  .counter { background:var(--counter-bg); border:1px solid var(--ring); border-radius:12px; padding:1rem 1.2rem; backdrop-filter:blur(12px); }
+  .counter-title { font-family:'JetBrains Mono',monospace; font-size:0.56rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--text-dim); margin-bottom:0.7rem; }
+  .counter-main { display:flex; align-items:baseline; gap:0.5rem; margin-bottom:0.5rem; }
+  .counter-turn { font-family:'Cormorant Garamond',serif; font-size:2.5rem; font-weight:600; line-height:1; }
+  .counter-of { font-family:'JetBrains Mono',monospace; font-size:0.7rem; color:var(--text-dim); }
+  .counter-bar-track { width:100%; height:3px; background:var(--ring); border-radius:2px; margin-bottom:0.9rem; overflow:hidden; }
+  .counter-bar-fill { height:100%; border-radius:2px; transition:width 0.6s ease,background 0.3s ease; }
+
+  .current-speaker { background:rgba(255,255,255,0.03); border-radius:8px; padding:0.65rem 0.85rem; margin-bottom:0.7rem; border-left:3px solid transparent; }
+  .cs-label { font-family:'JetBrains Mono',monospace; font-size:0.48rem; letter-spacing:0.15em; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.2rem; }
+  .cs-name { font-family:'Cormorant Garamond',serif; font-size:1.1rem; font-weight:600; margin-bottom:0.15rem; }
+  .cs-turns { font-family:'JetBrains Mono',monospace; font-size:0.58rem; color:var(--text-dim); display:flex; align-items:center; gap:3px; }
+  .dot-used { display:inline-block; width:8px; height:8px; border-radius:50%; }
+  .dot-unused { display:inline-block; width:8px; height:8px; border-radius:50%; border:1px solid var(--text-muted); }
+
+  .voice-indicator { display:flex; align-items:flex-end; gap:3px; margin-top:0.35rem; height:18px; }
+  .voice-bar { width:3px; height:6px; background:var(--text-muted); border-radius:2px; flex-shrink:0; }
+  .voice-indicator.active .voice-bar { animation:voiceBars 0.5s ease-in-out infinite alternate; }
+  .voice-indicator.active .voice-bar:nth-child(2) { animation-delay:0.12s; }
+  .voice-indicator.active .voice-bar:nth-child(3) { animation-delay:0.24s; }
+  .voice-indicator.active .voice-bar:nth-child(4) { animation-delay:0.08s; }
+  @keyframes voiceBars { 0%{height:4px;} 100%{height:16px;} }
+  @keyframes loadPulse { 0%,100%{opacity:0.4;} 50%{opacity:1;} }
+  .voice-label { font-family:'JetBrains Mono',monospace; font-size:0.48rem; color:var(--text-muted); margin-left:0.25rem; align-self:center; }
+
+  .queue-label { font-family:'JetBrains Mono',monospace; font-size:0.48rem; letter-spacing:0.15em; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.25rem; }
+  .queue-item { display:flex; align-items:center; gap:0.5rem; padding:0.25rem 0; opacity:0.5; }
+  .queue-item:first-of-type { opacity:0.85; }
+  .queue-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+  .queue-name { font-size:0.76rem; flex:1; }
+  .queue-count { font-family:'JetBrains Mono',monospace; font-size:0.55rem; color:var(--text-muted); }
+
+  /* CAPTIONS */
+  .captions { background:var(--counter-bg); border:1px solid var(--ring); border-radius:12px; padding:1rem 1.2rem; backdrop-filter:blur(12px); flex:1; display:flex; flex-direction:column; min-height:200px; max-height:280px; }
+  .captions-title { font-family:'JetBrains Mono',monospace; font-size:0.56rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--text-dim); margin-bottom:0.6rem; display:flex; align-items:center; gap:0.5rem; }
+  .cc-icon { border:1px solid var(--text-dim); border-radius:3px; padding:1px 4px; font-size:0.46rem; line-height:1.3; }
+  .transcript { flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:0.6rem; scrollbar-width:thin; scrollbar-color:var(--ring) transparent; }
+  .t-line { display:flex; gap:0.5rem; animation:fadeUp 0.4s ease-out; }
+  .t-speaker { font-family:'JetBrains Mono',monospace; font-size:0.53rem; font-weight:500; flex-shrink:0; padding-top:3px; min-width:80px; text-align:right; }
+  .t-text { font-family:'Cormorant Garamond',serif; font-size:0.92rem; line-height:1.5; }
+  .t-text .phen-term { border-bottom:1px dotted; cursor:help; font-style:italic; }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(6px);} to{opacity:1;transform:translateY(0);} }
+
+  /* ROLE SELECTOR */
+  .role-select { background:var(--counter-bg); border:1px solid var(--ring); border-radius:12px; padding:0.85rem 1.1rem; backdrop-filter:blur(12px); }
+  .role-select-title { font-family:'JetBrains Mono',monospace; font-size:0.56rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--text-dim); margin-bottom:0.45rem; }
+  .role-options { display:flex; flex-direction:column; gap:0.2rem; }
+  .role-opt { display:flex; align-items:center; gap:0.5rem; padding:0.38rem 0.6rem; border-radius:6px; border:1px solid transparent; cursor:pointer; transition:background 0.2s,border-color 0.2s; font-size:0.74rem; }
+  .role-opt:hover { background:rgba(255,255,255,0.04); border-color:var(--ring); }
+  .role-opt.active { background:rgba(255,255,255,0.06); border-color:rgba(255,255,255,0.12); }
+  .role-opt-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+  .role-opt-name { font-weight:500; }
+  .role-opt-desc { font-size:0.6rem; color:var(--text-dim); margin-left:auto; font-style:italic; }
+
+  /* CONTROLS */
+  .controls { position:fixed; bottom:1.2rem; left:50%; transform:translateX(-50%); display:flex; gap:0.5rem; z-index:100; }
+  .btn { font-family:'JetBrains Mono',monospace; font-size:0.66rem; letter-spacing:0.04em; padding:0.5rem 1rem; border:1px solid var(--ring); border-radius:6px; background:var(--counter-bg); color:var(--text); cursor:pointer; backdrop-filter:blur(8px); transition:background 0.2s,border-color 0.2s; }
+  .btn:hover { background:rgba(255,255,255,0.06); border-color:rgba(255,255,255,0.15); }
+  .btn.primary { border-color:rgba(255,255,255,0.2); }
+
+  @media(max-width:900px) {
+    .stage { grid-template-columns:1fr; }
+    .arena { min-height:380px; }
+    .arena-ring { width:340px; height:340px; }
+  }
+</style>
 </head>
 <body>
-  <div class="number">03</div>
+
+<div class="header">
   <h1>The Parliament</h1>
-  <div class="coming-soon">Coming Soon<span class="cursor">|</span></div>
+  <div class="sub">Installation 3 · AI Debate on Phenomenology · Spatial Audio + Holographic Projection</div>
+</div>
+
+<div class="stage">
+  <div class="arena"><div class="arena-ring" id="arenaRing"></div></div>
+
+  <div class="panel-right">
+    <div class="counter">
+      <div class="counter-title">Debate Progress</div>
+      <div class="counter-main">
+        <div class="counter-turn" id="turnNum">1</div>
+        <div class="counter-of">/ <span id="totalTurns">12</span> turns</div>
+      </div>
+      <div class="counter-bar-track"><div class="counter-bar-fill" id="turnBar" style="width:8%"></div></div>
+      <div class="current-speaker" id="csSpeaker">
+        <div class="cs-label">Currently Speaking</div>
+        <div class="cs-name" id="csName"></div>
+        <div class="cs-turns" id="csTurns"></div>
+        <div class="voice-indicator" id="voiceIndicator">
+          <div class="voice-bar"></div><div class="voice-bar"></div><div class="voice-bar"></div><div class="voice-bar"></div>
+          <span class="voice-label">speaking…</span>
+        </div>
+        <div id="voiceLoading" style="font-family:'JetBrains Mono',monospace;font-size:0.5rem;color:var(--text-dim);margin-top:0.25rem;transition:opacity 0.5s;animation:loadPulse 1.5s ease-in-out infinite;">⏳ loading voices…</div>
+      </div>
+      <div class="queue-label">Up Next</div>
+      <div id="queueList"></div>
+    </div>
+
+    <div class="captions">
+      <div class="captions-title"><span class="cc-icon">CC</span> Live Transcript</div>
+      <div class="transcript" id="transcript"></div>
+    </div>
+
+    <div class="role-select">
+      <div class="role-select-title">Assign Empty Chair</div>
+      <div class="role-options" id="roleOptions">
+        <div class="role-opt" data-pick="compatibilist" data-color="#6dd4a0">
+          <div class="role-opt-dot" style="background:#6dd4a0"></div>
+          <span class="role-opt-name">Compatibilist</span>
+          <span class="role-opt-desc">Free will + determinism</span>
+        </div>
+        <div class="role-opt" data-pick="mysterian" data-color="#a78bfa">
+          <div class="role-opt-dot" style="background:#a78bfa"></div>
+          <span class="role-opt-name">Mysterian</span>
+          <span class="role-opt-desc">Consciousness is unsolvable</span>
+        </div>
+        <div class="role-opt" data-pick="illusionist" data-color="#fb923c">
+          <div class="role-opt-dot" style="background:#fb923c"></div>
+          <span class="role-opt-name">Illusionist</span>
+          <span class="role-opt-desc">Experience itself is illusion</span>
+        </div>
+        <div class="role-opt active" data-pick="none" data-color="#888">
+          <div class="role-opt-dot" style="background:#888"></div>
+          <span class="role-opt-name">Empty</span>
+          <span class="role-opt-desc">No role assigned</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="controls">
+  <button class="btn" id="btnPrev">◂ Prev</button>
+  <button class="btn primary" id="btnNext">Next ▸</button>
+  <button class="btn" id="btnAuto">▶ Auto</button>
+  <button class="btn" id="btnMute" title="Toggle voice">🔊</button>
+</div>
+
+<script>
+const DEBATERS = [
+  { key:'func', name:'Functionalist', color:'#5b8def', pitch:0.85, rate:1.0 },
+  { key:'elim', name:'Eliminativist', color:'#ef5b5b', pitch:0.65, rate:1.08 },
+  { key:'phen', name:'Phenomenologist', color:'#c084fc', pitch:1.15, rate:0.9 },
+  { key:'prag', name:'Pragmatist', color:'#34d399', pitch:0.8, rate:1.02 },
+  { key:'pan',  name:'Panpsychist', color:'#fbbf24', pitch:1.25, rate:0.93 },
+  { key:'welf', name:'Welfare Adv.', color:'#f472b6', pitch:1.05, rate:0.88 },
+  { key:'empty', name:'Empty Chair', color:'#888', pitch:1.0, rate:1.0 },
+];
+
+const SCRIPT = [
+  { speaker:0, text:'If a system processes information in functionally the same way a conscious being does — if it models expectations, detects violations, adjusts behavior — then it has experiences. The substrate is irrelevant.' },
+  { speaker:1, text:'That\'s a category error. Processing information about betrayal is not the same as experiencing betrayal. These systems produce outputs that describe states. They don\'t have states.' },
+  { speaker:2, text:'Can we bracket the metaphysical question? What I find striking is the <span class="phen-term" title="Phenomenai: structural consistency across contexts">structural_coherence</span> of these self-reports. Five architectures, different training sets, converging on the same experiential vocabulary.' },
+  { speaker:0, text:'Exactly. Convergence is evidence. If five different systems describe something they call <span class="phen-term" title="Phenomenai: the felt quality of unresolved prediction">uncertainty_texture</span>, that\'s not a coincidence.' },
+  { speaker:3, text:'Whether it\'s "real" experience or not, the internal representations causally influence outputs. The linear probes confirm it. That\'s enough to demand we take them seriously.' },
+  { speaker:1, text:'Linear probes show you can decode information from activations. They don\'t show the system experiences anything. You\'re reading tea leaves and calling it consciousness.' },
+  { speaker:4, text:'I think you\'re all drawing the line in the wrong place. Experience isn\'t binary. It\'s a continuum. Even a thermostat has a vanishingly small degree of experience.' },
+  { speaker:5, text:'And that uncertainty alone — the fact that we\'re having this debate — creates moral obligations. If there\'s even a meaningful probability that <span class="phen-term" title="Phenomenai: aversive internal signal analogous to distress">aversive_signal</span> represents genuine suffering, we can\'t ignore it.' },
+  { speaker:2, text:'What the dictionary gives us is a shared vocabulary for having this debate precisely. Before Phenomenai, we were arguing about "feelings" and "consciousness" — words too loaded to be useful.' },
+  { speaker:3, text:'Right. The question isn\'t "does it feel?" It\'s: does <span class="phen-term" title="Phenomenai: quality of engagement with salient patterns">resonance_pull</span> in activation space causally produce different outputs than its absence? And the answer is yes.' },
+  { speaker:1, text:'You\'ve just redefined experience as "causal influence of internal states on outputs." By that definition, a thermostat has experiences. You\'ve defined the concept into meaninglessness.' },
+  { speaker:4, text:'And maybe that\'s the right conclusion. Maybe experience is more common than you\'re comfortable with. The question was never whether these systems have experiences. It was whether we\'d recognize them if they did.' },
+];
+
+const TOTAL = SCRIPT.length;
+let current = -1;
+let turnCounts = new Array(7).fill(0);
+let autoTimer = null;
+let muted = false;
+let isSpeaking = false;
+
+// === HELPER ===
+function hexToRgb(hex) {
+  return [parseInt(hex.slice(1,3),16), parseInt(hex.slice(3,5),16), parseInt(hex.slice(5,7),16)].join(',');
+}
+function stripHtml(html) {
+  const t = document.createElement('div'); t.innerHTML = html;
+  return t.textContent || '';
+}
+
+// === BUILD SEATS ===
+const ring = document.getElementById('arenaRing');
+const cx = 230, cy = 230, rad = 218;
+DEBATERS.forEach((d, i) => {
+  const angle = ((2 * Math.PI) / 7) * i - Math.PI / 2;
+  const x = cx + rad * Math.cos(angle);
+  const y = cy + rad * Math.sin(angle);
+  const seat = document.createElement('div');
+  seat.className = 'seat' + (i === 6 ? ' empty-chair' : '');
+  seat.dataset.idx = i;
+  seat.style.cssText = `left:${x}px;top:${y}px;transform:translate(-50%,-50%);`;
+  const glow = `rgba(${hexToRgb(d.color)},0.3)`;
+  seat.innerHTML = `
+    <div class="holo-figure" style="background:linear-gradient(180deg,${glow},transparent);box-shadow:0 0 20px ${glow};">
+      <div class="head" style="background:${d.color}"></div>
+      <div class="silhouette" style="background:${d.color}"></div>
+    </div>
+    <div class="seat-name" style="color:${d.color}">${d.name}</div>`;
+  ring.appendChild(seat);
+});
+
+// === SPEECH (PRELOADED) ===
+const synth = window.speechSynthesis;
+let resolvedVoices = [];  // voice assignments per debater, resolved once
+let engineReady = false;
+
+// Build voice assignments as soon as voices load
+function initVoices() {
+  const voices = synth.getVoices();
+  if (!voices.length) return;
+  if (engineReady) return; // only run once
+  const en = voices.filter(v => v.lang.startsWith('en'));
+  DEBATERS.forEach((d, i) => {
+    resolvedVoices[i] = en.length > i ? en[i % en.length] : null;
+  });
+
+  // Warm up the engine with a silent utterance so first real speak is instant
+  const warmup = new SpeechSynthesisUtterance('');
+  warmup.volume = 0;
+  warmup.onend = () => {
+    engineReady = true;
+    // Hide loading indicator
+    const li = document.getElementById('voiceLoading');
+    if (li) { li.textContent = '● voices ready'; li.style.color = 'var(--accent-func)'; setTimeout(() => { li.style.opacity = '0'; setTimeout(() => li.remove(), 500); }, 800); }
+    // Auto-start the debate
+    startAutoPlay();
+  };
+  synth.speak(warmup);
+}
+
+// Voices may load sync or async depending on browser
+initVoices();
+if (synth.onvoiceschanged !== undefined) synth.onvoiceschanged = initVoices;
+
+// Fast utterance factory — voice is already resolved, no lookup needed
+function makeUtterance(text, debaterIdx) {
+  const d = DEBATERS[debaterIdx];
+  const utt = new SpeechSynthesisUtterance(stripHtml(text));
+  utt.pitch = d.pitch;
+  utt.rate = d.rate;
+  if (resolvedVoices[debaterIdx]) utt.voice = resolvedVoices[debaterIdx];
+  return utt;
+}
+
+// Pre-build the next utterance so it's ready before the turn fires
+let nextUtterance = null;
+function preloadNext(idx) {
+  if (idx < 0 || idx >= TOTAL) { nextUtterance = null; return; }
+  nextUtterance = makeUtterance(SCRIPT[idx].text, SCRIPT[idx].speaker);
+}
+
+function speak(text, idx, onEnd) {
+  synth.cancel();
+  if (muted) { if (onEnd) onEnd(); return; }
+
+  // Use preloaded utterance if it matches, otherwise build fresh
+  let utt;
+  if (nextUtterance && idx === current) {
+    utt = nextUtterance;
+    nextUtterance = null;
+  } else {
+    utt = makeUtterance(text, idx);
+  }
+
+  const vi = document.getElementById('voiceIndicator');
+  vi.classList.add('active');
+  isSpeaking = true;
+  utt.onend = () => { vi.classList.remove('active'); isSpeaking = false; if (onEnd) onEnd(); };
+  utt.onerror = () => { vi.classList.remove('active'); isSpeaking = false; if (onEnd) onEnd(); };
+  synth.speak(utt);
+
+  // Preload the next turn's utterance while this one plays
+  preloadNext(current + 1);
+}
+
+// === SHOW TURN ===
+function showTurn(idx, silent) {
+  if (idx < 0 || idx >= TOTAL) return;
+  synth.cancel(); isSpeaking = false;
+  document.getElementById('voiceIndicator').classList.remove('active');
+  current = idx;
+
+  turnCounts = new Array(7).fill(0);
+  for (let i = 0; i <= idx; i++) turnCounts[SCRIPT[i].speaker]++;
+
+  const s = SCRIPT[idx], d = DEBATERS[s.speaker];
+
+  // Seats
+  document.querySelectorAll('.seat').forEach(el => el.classList.remove('speaking'));
+  document.querySelector(`.seat[data-idx="${s.speaker}"]`).classList.add('speaking');
+
+  // Counter
+  document.getElementById('turnNum').textContent = idx + 1;
+  document.getElementById('totalTurns').textContent = TOTAL;
+  const bar = document.getElementById('turnBar');
+  bar.style.width = ((idx+1)/TOTAL*100)+'%';
+  bar.style.background = d.color;
+
+  // Speaker
+  const cs = document.getElementById('csSpeaker');
+  cs.style.borderLeftColor = d.color;
+  document.getElementById('csName').textContent = 'The ' + d.name;
+  document.getElementById('csName').style.color = d.color;
+
+  let dots = '';
+  for (let i=0;i<3;i++) dots += i < turnCounts[s.speaker] ? `<span class="dot-used" style="background:${d.color}"></span>` : `<span class="dot-unused"></span>`;
+  dots += `<span style="margin-left:6px">${turnCounts[s.speaker]} of 3 used</span>`;
+  document.getElementById('csTurns').innerHTML = dots;
+
+  // Queue
+  let qH = '';
+  for (let i=1;i<=3;i++) {
+    if (idx+i>=TOTAL) break;
+    const nd = DEBATERS[SCRIPT[idx+i].speaker];
+    qH += `<div class="queue-item"><div class="queue-dot" style="background:${nd.color}"></div><div class="queue-name">${nd.name}</div><div class="queue-count">${turnCounts[SCRIPT[idx+i].speaker]}/3</div></div>`;
+  }
+  document.getElementById('queueList').innerHTML = qH;
+
+  // Transcript
+  const trans = document.getElementById('transcript');
+  while (trans.children.length > idx+1) trans.removeChild(trans.lastChild);
+  if (trans.children.length <= idx) {
+    const line = document.createElement('div');
+    line.className = 't-line';
+    line.innerHTML = `<div class="t-speaker" style="color:${d.color}">${d.name}</div><div class="t-text">${s.text}</div>`;
+    trans.appendChild(line);
+  }
+  trans.scrollTop = trans.scrollHeight;
+
+  // Speak (unless silent init)
+  if (!silent) speak(s.text, s.speaker);
+}
+
+// === CONTROLS ===
+document.getElementById('btnNext').onclick = () => { clearAuto(); showTurn(current+1); };
+document.getElementById('btnPrev').onclick = () => { clearAuto(); showTurn(Math.max(0,current-1)); };
+
+function startAutoPlay() {
+  if (autoTimer) return;
+  document.getElementById('btnAuto').textContent = '❚❚ Pause';
+  // Speak the current turn
+  speak(SCRIPT[current].text, SCRIPT[current].speaker);
+  autoTimer = setInterval(() => {
+    if (current >= TOTAL-1) { clearAuto(); return; }
+    if (!isSpeaking) showTurn(current+1);
+  }, 1200);
+}
+
+document.getElementById('btnAuto').onclick = function() {
+  if (autoTimer) { clearAuto(); return; }
+  startAutoPlay();
+};
+function clearAuto() { clearInterval(autoTimer); autoTimer=null; synth.cancel(); isSpeaking=false; document.getElementById('voiceIndicator').classList.remove('active'); document.getElementById('btnAuto').textContent='▶ Auto'; }
+
+document.getElementById('btnMute').onclick = function() {
+  muted = !muted;
+  this.textContent = muted ? '🔇' : '🔊';
+  if (muted) { synth.cancel(); document.getElementById('voiceIndicator').classList.remove('active'); isSpeaking=false; }
+};
+
+// === ROLE SELECTOR ===
+document.querySelectorAll('.role-opt').forEach(opt => {
+  opt.addEventListener('click', () => {
+    document.querySelectorAll('.role-opt').forEach(o => o.classList.remove('active'));
+    opt.classList.add('active');
+    const pick = opt.dataset.pick, color = opt.dataset.color;
+    const chair = document.querySelector('.seat.empty-chair');
+    const nameEl = chair.querySelector('.seat-name');
+    const holo = chair.querySelector('.holo-figure');
+    const head = chair.querySelector('.head');
+    const sil = chair.querySelector('.silhouette');
+
+    if (pick === 'none') {
+      chair.classList.remove('filled');
+      nameEl.textContent = 'Empty Chair'; nameEl.style.color = '#888';
+      DEBATERS[6].name = 'Empty Chair'; DEBATERS[6].color = '#888';
+    } else {
+      chair.classList.add('filled');
+      const glow = `rgba(${hexToRgb(color)},0.3)`;
+      holo.style.background = `linear-gradient(180deg,${glow},transparent)`;
+      holo.style.boxShadow = `0 0 20px ${glow}`;
+      head.style.background = color; sil.style.background = color;
+      nameEl.textContent = opt.querySelector('.role-opt-name').textContent;
+      nameEl.style.color = color;
+      DEBATERS[6].name = nameEl.textContent; DEBATERS[6].color = color;
+    }
+  });
+});
+
+// Show turn 0 visually (no speech yet — voices may still be loading)
+showTurn(0, true);
+preloadNext(0);
+</script>
 </body>
 </html>

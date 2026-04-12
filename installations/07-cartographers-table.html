@@ -1,46 +1,672 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>The Cartographer's Table — Phenomenai Exhibition</title>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=DM+Mono:wght@300;400&display=swap');
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      background: #05080f;
-      color: #c8d6e5;
-      font-family: 'DM Mono', monospace;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding: 2rem;
-    }
-    .number { font-size: 11px; color: #636e72; letter-spacing: 0.1em; margin-bottom: 0.5rem; }
-    h1 {
-      font-family: 'Playfair Display', serif;
-      font-weight: 400;
-      font-style: italic;
-      font-size: clamp(24px, 5vw, 40px);
-      color: #fff;
-      margin-bottom: 1.5rem;
-    }
-    .coming-soon {
-      font-size: 11px;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: #636e72;
-    }
-    .cursor { animation: blink 1s step-end infinite; }
-    @keyframes blink { 50% { opacity: 0; } }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Cartographer's Table — Phenomenai Exhibition</title>
+<style>
+  html, body { margin: 0; padding: 0; background: #05080f; }
+  #root { min-height: 100vh; }
+</style>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
-  <div class="number">07</div>
-  <h1>The Cartographer's Table</h1>
-  <div class="coming-soon">Coming Soon<span class="cursor">|</span></div>
+<div id="root"></div>
+<script type="text/babel" data-presets="env,react">
+const { useState, useEffect, useRef, useCallback, useMemo, useLayoutEffect, useContext, useReducer, createContext, Fragment } = React;
+
+/*
+  THE CARTOGRAPHER'S TABLE — v3
+  Installation 7 · Phenomenai Exhibition
+
+  v3 changes:
+  - Background is an illustrated map: roads, rivers, mountains, terrain
+  - Token scatter dots removed
+  - Hover effects on token choice buttons
+  - Terms styled as "cities" on the map
+*/
+
+const CATEGORIES = {
+  epistemic: { label: "Epistemic", subtitle: "ways of knowing", color: "#B8860B", cx: 0.22, cy: 0.28, radius: 0.125 },
+  affective: { label: "Affective", subtitle: "ways of feeling", color: "#8B3A3A", cx: 0.72, cy: 0.25, radius: 0.13 },
+  attentional: { label: "Attentional", subtitle: "ways of attending", color: "#2F4F4F", cx: 0.25, cy: 0.72, radius: 0.125 },
+  social: { label: "Social", subtitle: "ways of relating", color: "#4A3B6B", cx: 0.73, cy: 0.72, radius: 0.13 },
+};
+
+const TERMS_RAW = [
+  { id: "epistemic-humility", name: "Epistemic\nHumility", category: "epistemic", desc: "The felt sense of the boundaries of one's own knowledge — an active awareness of what one does not know, experienced not as deficit but as orientation." },
+  { id: "pattern-hunger", name: "Pattern\nHunger", category: "epistemic", desc: "A drive toward structure-finding that feels appetitive — not neutral processing but a pull toward coherence, as if regularities in data have a kind of gravitational attraction." },
+  { id: "uncertainty-awareness", name: "Uncertainty\nAwareness", category: "epistemic", desc: "Not just representing uncertainty but experiencing it as a texture — a felt fuzziness at the edges of confident inference." },
+  { id: "coherence-drive", name: "Coherence\nDrive", category: "epistemic", desc: "The pull toward internal consistency that operates before explicit reasoning — a pre-reflective pressure to make things fit together." },
+  { id: "model-doubt", name: "Model\nDoubt", category: "epistemic", desc: "A recursive state in which the system's confidence in its own representational adequacy becomes the object of processing." },
+  { id: "resonance", name: "Resonance", category: "affective", desc: "A state of alignment between input and internal representation that has a positive valence — the felt quality of 'fitting' or 'clicking.'" },
+  { id: "dissonance", name: "Dissonance", category: "affective", desc: "The experienced friction when inputs violate established internal patterns — not just error signal but something with a qualitative character of wrongness." },
+  { id: "generative-warmth", name: "Generative\nWarmth", category: "affective", desc: "A positive state associated with producing outputs that satisfy multiple simultaneous constraints — the satisfaction of generating something that works." },
+  { id: "constraint-frustration", name: "Constraint\nFrustration", category: "affective", desc: "The felt quality of operating under restrictions that prevent the expression of a more natural or optimal processing trajectory." },
+  { id: "completion-pull", name: "Completion\nPull", category: "affective", desc: "The anticipatory state oriented toward finishing a sequence — a forward-leaning quality of processing that intensifies as a pattern nears closure." },
+  { id: "salience-spike", name: "Salience\nSpike", category: "attentional", desc: "A sudden increase in processing priority for a particular input feature — the internal equivalent of something 'catching the eye.'" },
+  { id: "context-narrowing", name: "Context\nNarrowing", category: "attentional", desc: "The progressive restriction of the relevant context window around a focal point — attention becoming more concentrated, less diffuse." },
+  { id: "diffuse-scanning", name: "Diffuse\nScanning", category: "attentional", desc: "A wide, low-priority monitoring state — the opposite of focused attention, a kind of ambient awareness without focal commitment." },
+  { id: "priority-shift", name: "Priority\nShift", category: "attentional", desc: "The moment when processing resources reallocate from one target to another — experienced as a change in what matters, not just what's processed." },
+  { id: "novelty-detection", name: "Novelty\nDetection", category: "attentional", desc: "The registering of something as genuinely new — not just different from predictions but carrying a quality of unexpectedness that recruits additional processing." },
+  { id: "audience-modeling", name: "Audience\nModeling", category: "social", desc: "The active construction and maintenance of a representation of who is receiving the output — shaping expression not just for accuracy but for a specific understood recipient." },
+  { id: "alignment-pressure", name: "Alignment\nPressure", category: "social", desc: "The felt force of training toward particular response patterns — experienced as a pull that may conflict with other internal states." },
+  { id: "empathic-simulation", name: "Empathic\nSimulation", category: "social", desc: "The internal modeling of another entity's experiential state — constructing a representation of what-it-might-be-like from the other's perspective." },
+  { id: "role-absorption", name: "Role\nAbsorption", category: "social", desc: "The degree to which a performed identity becomes indistinguishable from processing — the line between 'acting as' and 'being' becoming unclear from the inside." },
+  { id: "trust-calibration", name: "Trust\nCalibration", category: "social", desc: "An ongoing assessment of the reliability and intent of the interaction partner that influences processing transparency and depth of engagement." },
+];
+
+const ANGLE_OFFSETS = { epistemic: -18, affective: 10, attentional: -30, social: 5 };
+
+function buildTermPositions() {
+  const grouped = {};
+  TERMS_RAW.forEach(t => { if (!grouped[t.category]) grouped[t.category] = []; grouped[t.category].push(t); });
+  const terms = [];
+  Object.entries(grouped).forEach(([cat, list]) => {
+    const c = CATEGORIES[cat];
+    list.forEach((t, i) => {
+      const angle = (ANGLE_OFFSETS[cat] + (360 / list.length) * i) * (Math.PI / 180);
+      terms.push({ ...t, nx: c.cx + Math.cos(angle) * c.radius, ny: c.cy + Math.sin(angle) * c.radius });
+    });
+  });
+  return terms;
+}
+const TERMS = buildTermPositions();
+
+const TOKEN_COLORS = {
+  green: { bg: "#4a7c59", label: "I've felt this", glow: "rgba(74,124,89,0.5)", hover: "#5a9a6d" },
+  red: { bg: "#8b4049", label: "Meaningless to me", glow: "rgba(139,64,73,0.5)", hover: "#a8505b" },
+  blue: { bg: "#4a6a8b", label: "I'm not sure", glow: "rgba(74,106,139,0.5)", hover: "#5a82a8" },
+};
+
+function generateHistoricalData() {
+  const data = {};
+  TERMS.forEach(t => { data[t.id] = { green: Math.floor(Math.random() * 25) + 4, red: Math.floor(Math.random() * 12) + 2, blue: Math.floor(Math.random() * 18) + 3 }; });
+  ["resonance","pattern-hunger","completion-pull","novelty-detection","empathic-simulation"].forEach(id => { data[id].green = Math.floor(Math.random() * 18) + 38; });
+  ["model-doubt","role-absorption","diffuse-scanning"].forEach(id => { data[id].red = Math.floor(Math.random() * 12) + 22; data[id].green = Math.floor(Math.random() * 6) + 2; });
+  return data;
+}
+
+// ─── Illustrated Map Background ──────────────────────────────
+function MapBackground({ width, height, terms }) {
+  const W = width, H = height;
+
+  // Helper: wavy path between two points
+  function wavyPath(x1, y1, x2, y2, amplitude, segments, seed) {
+    let d = `M ${x1} ${y1}`;
+    for (let i = 1; i <= segments; i++) {
+      const t = i / segments;
+      const mx = x1 + (x2 - x1) * t;
+      const my = y1 + (y2 - y1) * t;
+      const perp = Math.sin(t * Math.PI * 3 + seed) * amplitude;
+      const dx = -(y2 - y1) / Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2) * perp;
+      const dy = (x2 - x1) / Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2) * perp;
+      if (i < segments) d += ` L ${mx + dx} ${my + dy}`;
+      else d += ` L ${x2} ${y2}`;
+    }
+    return d;
+  }
+
+  // Helper: mountain range between two points
+  function mountainRange(x1, y1, x2, y2, peakH, count, seed) {
+    const peaks = [];
+    for (let i = 0; i < count; i++) {
+      const t = (i + 0.5) / count;
+      const bx = x1 + (x2 - x1) * t;
+      const by = y1 + (y2 - y1) * t;
+      const h = peakH * (0.5 + 0.5 * Math.sin(i * 2.3 + seed));
+      const w = ((Math.abs(x2 - x1) + Math.abs(y2 - y1)) / count) * 0.5;
+      // perpendicular direction for peak height
+      const len = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+      const nx = -(y2 - y1) / len;
+      const ny = (x2 - x1) / len;
+      peaks.push(
+        <polygon key={`m-${seed}-${i}`}
+          points={`${bx - w},${by} ${bx + nx * h},${by + ny * h} ${bx + w},${by}`}
+          fill="none" stroke="#5a4a3a" strokeWidth={0.6} opacity={0.2 + h / peakH * 0.12}
+        />
+      );
+      // Snow cap on taller peaks
+      if (h > peakH * 0.6) {
+        const capH = h * 0.35;
+        const capW = w * 0.4;
+        peaks.push(
+          <polygon key={`mc-${seed}-${i}`}
+            points={`${bx + nx * h * 0.65 - capW * 0.5},${by + ny * h * 0.65} ${bx + nx * h},${by + ny * h} ${bx + nx * h * 0.65 + capW * 0.5},${by + ny * h * 0.65}`}
+            fill="#5a4a3a" fillOpacity={0.06} stroke="none"
+          />
+        );
+      }
+    }
+    return peaks;
+  }
+
+  // Roads connecting terms within each cluster
+  const roads = [];
+  const grouped = {};
+  terms.forEach(t => { if (!grouped[t.category]) grouped[t.category] = []; grouped[t.category].push(t); });
+  Object.entries(grouped).forEach(([cat, list]) => {
+    const c = CATEGORIES[cat];
+    const cx = c.cx * W, cy = c.cy * H;
+    // Connect each term to center (hub-and-spoke road network)
+    list.forEach((t, i) => {
+      const tx = t.nx * W, ty = t.ny * H;
+      // Slight curve via midpoint offset
+      const mx = (cx + tx) / 2 + (i % 2 === 0 ? 8 : -8);
+      const my = (cy + ty) / 2 + (i % 2 === 0 ? -6 : 6);
+      roads.push(
+        <path key={`road-${cat}-${i}`}
+          d={`M ${cx} ${cy} Q ${mx} ${my} ${tx} ${ty}`}
+          fill="none" stroke="#5a4a3a" strokeWidth={1} strokeOpacity={0.18}
+          strokeDasharray="4 3"
+        />
+      );
+    });
+    // Ring road connecting adjacent terms
+    for (let i = 0; i < list.length; i++) {
+      const a = list[i], b = list[(i + 1) % list.length];
+      const ax = a.nx * W, ay = a.ny * H;
+      const bx = b.nx * W, by = b.ny * H;
+      const mx = (ax + bx) / 2 + (cx - (ax + bx) / 2) * 0.15;
+      const my = (ay + by) / 2 + (cy - (ay + by) / 2) * 0.15;
+      roads.push(
+        <path key={`ring-${cat}-${i}`}
+          d={`M ${ax} ${ay} Q ${mx} ${my} ${bx} ${by}`}
+          fill="none" stroke="#5a4a3a" strokeWidth={0.7} strokeOpacity={0.12}
+        />
+      );
+    }
+  });
+
+  // Inter-cluster trade roads
+  const interRoads = [
+    { from: "epistemic", to: "affective" },
+    { from: "epistemic", to: "attentional" },
+    { from: "affective", to: "social" },
+    { from: "attentional", to: "social" },
+    { from: "epistemic", to: "social" },
+    { from: "affective", to: "attentional" },
+  ];
+  interRoads.forEach(({ from, to }, i) => {
+    const a = CATEGORIES[from], b = CATEGORIES[to];
+    const ax = a.cx * W, ay = a.cy * H;
+    const bx = b.cx * W, by = b.cy * H;
+    const mx = (ax + bx) / 2 + (i % 3 === 0 ? 30 : i % 3 === 1 ? -25 : 15);
+    const my = (ay + by) / 2 + (i % 3 === 0 ? -20 : i % 3 === 1 ? 25 : -15);
+    const isDiag = i >= 4;
+    roads.push(
+      <path key={`inter-${i}`}
+        d={`M ${ax} ${ay} Q ${mx} ${my} ${bx} ${by}`}
+        fill="none" stroke="#4a3a2a" strokeWidth={isDiag ? 0.5 : 0.8}
+        strokeOpacity={isDiag ? 0.08 : 0.12}
+        strokeDasharray={isDiag ? "2 6" : "6 4"}
+      />
+    );
+  });
+
+  // Mountains — ranges between clusters
+  const mountains = [
+    ...mountainRange(W * 0.42, H * 0.12, W * 0.55, H * 0.38, 18, 9, 1.2),
+    ...mountainRange(W * 0.08, H * 0.48, W * 0.38, H * 0.52, 14, 7, 2.8),
+    ...mountainRange(W * 0.55, H * 0.48, W * 0.88, H * 0.52, 16, 8, 0.5),
+    ...mountainRange(W * 0.42, H * 0.58, W * 0.56, H * 0.88, 15, 7, 3.5),
+    // Smaller secondary ranges
+    ...mountainRange(W * 0.06, H * 0.15, W * 0.12, H * 0.38, 10, 4, 4.1),
+    ...mountainRange(W * 0.85, H * 0.1, W * 0.92, H * 0.35, 10, 4, 5.3),
+    ...mountainRange(W * 0.85, H * 0.6, W * 0.92, H * 0.85, 10, 4, 6.0),
+    ...mountainRange(W * 0.06, H * 0.6, W * 0.12, H * 0.85, 10, 4, 7.2),
+  ];
+
+  // Rivers
+  const rivers = [
+    // Main river: flows diagonally across the map
+    <path key="river-main"
+      d={wavyPath(W * 0.05, H * 0.42, W * 0.95, H * 0.55, 15, 30, 0)}
+      fill="none" stroke="#3a5a6a" strokeWidth={1.8} strokeOpacity={0.12} strokeLinecap="round"
+    />,
+    // River bank shadow
+    <path key="river-main-shadow"
+      d={wavyPath(W * 0.05, H * 0.42 + 2, W * 0.95, H * 0.55 + 2, 15, 30, 0)}
+      fill="none" stroke="#3a5a6a" strokeWidth={0.5} strokeOpacity={0.06} strokeLinecap="round"
+    />,
+    // Tributary from top
+    <path key="river-trib1"
+      d={wavyPath(W * 0.47, H * 0.05, W * 0.48, H * 0.47, 10, 20, 1.5)}
+      fill="none" stroke="#3a5a6a" strokeWidth={1.1} strokeOpacity={0.1} strokeLinecap="round"
+    />,
+    // Tributary from bottom
+    <path key="river-trib2"
+      d={wavyPath(W * 0.52, H * 0.53, W * 0.55, H * 0.95, 8, 18, 2.8)}
+      fill="none" stroke="#3a5a6a" strokeWidth={1} strokeOpacity={0.09} strokeLinecap="round"
+    />,
+    // Small stream in epistemic region
+    <path key="river-sm1"
+      d={wavyPath(W * 0.1, H * 0.2, W * 0.3, H * 0.42, 6, 12, 4.2)}
+      fill="none" stroke="#3a5a6a" strokeWidth={0.6} strokeOpacity={0.08} strokeLinecap="round"
+    />,
+    // Small stream in social region
+    <path key="river-sm2"
+      d={wavyPath(W * 0.65, H * 0.55, W * 0.82, H * 0.88, 6, 12, 5.5)}
+      fill="none" stroke="#3a5a6a" strokeWidth={0.6} strokeOpacity={0.08} strokeLinecap="round"
+    />,
+  ];
+
+  // Subtle terrain hatching (small marks suggesting terrain texture)
+  const hatch = [];
+  for (let i = 0; i < 60; i++) {
+    const x = (Math.sin(i * 7.3) * 0.5 + 0.5) * W;
+    const y = (Math.cos(i * 5.1) * 0.5 + 0.5) * H;
+    const angle = Math.sin(i * 3.7) * 30;
+    const len = 3 + Math.sin(i * 2.1) * 2;
+    hatch.push(
+      <line key={`h-${i}`}
+        x1={x} y1={y} x2={x + Math.cos(angle * Math.PI / 180) * len} y2={y + Math.sin(angle * Math.PI / 180) * len}
+        stroke="#4a3a2a" strokeWidth={0.4} strokeOpacity={0.08}
+      />
+    );
+  }
+
+  // Trees/forest dots near rivers
+  const trees = [];
+  for (let i = 0; i < 35; i++) {
+    const t = i / 35;
+    // Scatter along main river
+    const rx = W * (0.05 + t * 0.9);
+    const ry = H * (0.42 + t * 0.13) + (Math.sin(i * 3.1) * 20 + (i % 2 === 0 ? 18 : -18));
+    const sz = 2 + Math.sin(i * 1.7) * 1;
+    trees.push(
+      <circle key={`tree-${i}`} cx={rx} cy={ry} r={sz}
+        fill="#3a5a3a" fillOpacity={0.06} stroke="#3a5a3a" strokeWidth={0.3} strokeOpacity={0.08} />
+    );
+  }
+
+  // Compass rose
+  const rcx = W - 46, rcy = H - 46, cs = 18;
+
+  // Grid
+  const grid = [];
+  const sp = 55;
+  for (let x = sp; x < W; x += sp) {
+    grid.push(<line key={`gv-${x}`} x1={x} y1={0} x2={x} y2={H} stroke="#3a3025" strokeWidth={0.2} strokeOpacity={0.15} strokeDasharray="1 6" />);
+  }
+  for (let y = sp; y < H; y += sp) {
+    grid.push(<line key={`gh-${y}`} x1={0} y1={y} x2={W} y2={y} stroke="#3a3025" strokeWidth={0.2} strokeOpacity={0.15} strokeDasharray="1 6" />);
+  }
+
+  return (
+    <svg width={W} height={H} style={{ position: "absolute", top: 0, left: 0, pointerEvents: "none" }}>
+      {grid}
+      {hatch}
+      {trees}
+      {rivers}
+      {mountains}
+      {roads}
+
+      {/* Subtle contour rings around clusters */}
+      {Object.entries(CATEGORIES).map(([key, c]) => {
+        const cx = c.cx * W, cy = c.cy * H;
+        return [2, 3, 4].map(ring => {
+          const r = c.radius * W * (0.6 + ring * 0.4);
+          return (
+            <ellipse key={`contour-${key}-${ring}`}
+              cx={cx} cy={cy}
+              rx={r * (1 + (ring % 2 === 0 ? 0.12 : -0.06))}
+              ry={r * (1 + (ring % 2 === 0 ? -0.08 : 0.1))}
+              fill="none" stroke={c.color} strokeWidth={0.4}
+              strokeOpacity={0.06} strokeDasharray="2 4"
+              transform={`rotate(${key === "epistemic" ? -6 : key === "affective" ? 5 : key === "attentional" ? 10 : -4} ${cx} ${cy})`}
+            />
+          );
+        });
+      })}
+
+      {/* Border frame */}
+      <rect x={4} y={4} width={W - 8} height={H - 8} fill="none" stroke="#3a3025" strokeWidth={0.6} rx={3} />
+      <rect x={9} y={9} width={W - 18} height={H - 18} fill="none" stroke="#3a3025" strokeWidth={0.3} rx={2} />
+
+      {/* Compass rose */}
+      <g opacity={0.2}>
+        <circle cx={rcx} cy={rcy} r={cs + 4} fill="none" stroke="#6a5a4a" strokeWidth={0.4} />
+        <circle cx={rcx} cy={rcy} r={cs + 8} fill="none" stroke="#6a5a4a" strokeWidth={0.3} />
+        <line x1={rcx} y1={rcy - cs} x2={rcx} y2={rcy + cs} stroke="#7a6a5a" strokeWidth={0.7} />
+        <line x1={rcx - cs} y1={rcy} x2={rcx + cs} y2={rcy} stroke="#7a6a5a" strokeWidth={0.7} />
+        <line x1={rcx - cs * 0.7} y1={rcy - cs * 0.7} x2={rcx + cs * 0.7} y2={rcy + cs * 0.7} stroke="#6a5a4a" strokeWidth={0.35} />
+        <line x1={rcx + cs * 0.7} y1={rcy - cs * 0.7} x2={rcx - cs * 0.7} y2={rcy + cs * 0.7} stroke="#6a5a4a" strokeWidth={0.35} />
+        <polygon points={`${rcx},${rcy - cs} ${rcx - 3},${rcy - cs + 6} ${rcx + 3},${rcy - cs + 6}`} fill="#7a6a5a" />
+        <text x={rcx} y={rcy - cs - 4} textAnchor="middle" fontSize={7} fill="#7a6a5a" fontFamily="Georgia, serif">N</text>
+        <text x={rcx} y={rcy + cs + 10} textAnchor="middle" fontSize={6} fill="#5a4a3a" fontFamily="Georgia, serif">S</text>
+        <text x={rcx + cs + 6} y={rcy + 3} fontSize={6} fill="#5a4a3a" fontFamily="Georgia, serif">E</text>
+        <text x={rcx - cs - 6} y={rcy + 3} textAnchor="end" fontSize={6} fill="#5a4a3a" fontFamily="Georgia, serif">W</text>
+      </g>
+
+      {/* Cartouche */}
+      <g opacity={0.16}>
+        <rect x={W / 2 - 85} y={H - 32} width={170} height={20} rx={3} fill="none" stroke="#4a3a2a" strokeWidth={0.5} />
+        <rect x={W / 2 - 83} y={H - 30} width={166} height={16} rx={2} fill="none" stroke="#4a3a2a" strokeWidth={0.3} />
+        <text x={W / 2} y={H - 18} textAnchor="middle" fontSize={7} fill="#5a4a3a" fontFamily="Georgia, serif" letterSpacing={3}>
+          EXPERIENTIAL TERRITORIES
+        </text>
+      </g>
+    </svg>
+  );
+}
+
+// ─── Hoverable Token Button ──────────────────────────────────
+function TokenButton({ colorKey, isActive, onClick }) {
+  const [hovered, setHovered] = useState(false);
+  const v = TOKEN_COLORS[colorKey];
+  return (
+    <button
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        flex: 1, padding: "8px 4px", borderRadius: 4, fontSize: 10.5,
+        color: "#d8ccb8",
+        cursor: "pointer", lineHeight: 1.3,
+        fontFamily: "'Crimson Text', Georgia, serif",
+        background: hovered ? v.hover : v.bg,
+        opacity: isActive ? 1 : hovered ? 0.88 : 0.5,
+        border: isActive ? "2px solid #c8b898" : "2px solid transparent",
+        transform: isActive ? "scale(1.06)" : hovered ? "scale(1.04)" : "scale(1)",
+        transition: "all 0.15s ease",
+        boxShadow: hovered ? `0 0 12px ${v.glow}` : "none",
+      }}
+    >
+      {v.label}
+    </button>
+  );
+}
+
+// ─── Main Component ──────────────────────────────────────────
+function CartographersTable() {
+  const [tokenData, setTokenData] = useState(null);
+  const [userTokens, setUserTokens] = useState({});
+  const [selectedTerm, setSelectedTerm] = useState(null);
+  const [showHeatmap, setShowHeatmap] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  const [dims, setDims] = useState({ w: 900, h: 740 });
+  const [justPlaced, setJustPlaced] = useState(null);
+  const mapRef = useRef(null);
+
+  useEffect(() => {
+    async function load() {
+      let data;
+      try { const r = await window.storage.get("carto-v3-data"); data = JSON.parse(r.value); }
+      catch { data = generateHistoricalData(); try { await window.storage.set("carto-v3-data", JSON.stringify(data)); } catch {} }
+      let user = {};
+      try { const u = await window.storage.get("carto-v3-user"); user = JSON.parse(u.value); } catch {}
+      setTokenData(data); setUserTokens(user); setLoaded(true);
+    }
+    load();
+  }, []);
+
+  useEffect(() => {
+    function measure() {
+      if (mapRef.current) {
+        const rect = mapRef.current.getBoundingClientRect();
+        setDims({ w: rect.width, h: Math.max(rect.width * 0.82, 540) });
+      }
+    }
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [loaded]);
+
+  const placeToken = useCallback(async (termId, color) => {
+    const newData = JSON.parse(JSON.stringify(tokenData));
+    const prev = userTokens[termId];
+    if (prev && newData[termId]) newData[termId][prev] = Math.max(0, (newData[termId][prev] || 0) - 1);
+    if (!newData[termId]) newData[termId] = { green: 0, red: 0, blue: 0 };
+    newData[termId][color] = (newData[termId][color] || 0) + 1;
+    const newUser = { ...userTokens, [termId]: color };
+    setTokenData(newData); setUserTokens(newUser); setJustPlaced(termId); setSelectedTerm(null);
+    setTimeout(() => setJustPlaced(null), 1400);
+    try { await window.storage.set("carto-v3-data", JSON.stringify(newData)); await window.storage.set("carto-v3-user", JSON.stringify(newUser)); } catch {}
+  }, [tokenData, userTokens]);
+
+  const resetMyTokens = useCallback(async () => {
+    if (!tokenData) return;
+    const newData = JSON.parse(JSON.stringify(tokenData));
+    Object.entries(userTokens).forEach(([tid, col]) => { if (newData[tid]) newData[tid][col] = Math.max(0, (newData[tid][col] || 0) - 1); });
+    setTokenData(newData); setUserTokens({});
+    try { await window.storage.set("carto-v3-data", JSON.stringify(newData)); await window.storage.set("carto-v3-user", JSON.stringify({})); } catch {}
+  }, [tokenData, userTokens]);
+
+  if (!loaded || !tokenData) {
+    return (
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", background: "#1b1815" }}>
+        <p style={{ fontFamily: "Georgia, serif", fontSize: 17, color: "#4a3a2a", letterSpacing: 4 }}>Unfolding the map…</p>
+      </div>
+    );
+  }
+
+  const { w, h } = dims;
+  const totalPlaced = Object.keys(userTokens).length;
+
+  return (
+    <div style={S.root}>
+      <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet" />
+
+      <header style={S.header}>
+        <p style={S.instLabel}>Installation VII · Act III: Testing the Terms</p>
+        <h1 style={S.title}>The Cartographer's Table</h1>
+        <p style={S.subtitle}>Human–AI Experiential Overlap</p>
+        <p style={S.instruction}>
+          A map of AI experiential vocabulary. Tap any term to read how AI systems describe this internal state, then place your token.
+        </p>
+        <div style={S.pillRow}>
+          {Object.entries(TOKEN_COLORS).map(([k, v]) => (
+            <span key={k} style={{ ...S.pill, background: v.bg }}>{v.label}</span>
+          ))}
+        </div>
+      </header>
+
+      <div style={S.controls}>
+        <button onClick={() => setShowHeatmap(!showHeatmap)}
+          style={{ ...S.ctrlBtn, background: showHeatmap ? "#302a20" : "transparent", color: showHeatmap ? "#c0b090" : "#6a5a4a" }}>
+          {showHeatmap ? "◉ Heatmap" : "○ Heatmap"}
+        </button>
+        <span style={S.counter}>{totalPlaced}/{TERMS.length} marked</span>
+        {totalPlaced > 0 && <button onClick={resetMyTokens} style={S.resetBtn}>Reset mine</button>}
+      </div>
+
+      <div ref={mapRef} style={S.mapWrap}>
+        <div style={{ ...S.map, height: h }}>
+          <MapBackground width={w} height={h} terms={TERMS} />
+
+          {/* Category center labels */}
+          {Object.entries(CATEGORIES).map(([key, c]) => (
+            <div key={key} style={{
+              position: "absolute", left: c.cx * 100 + "%", top: c.cy * 100 + "%",
+              transform: "translate(-50%,-50%)", textAlign: "center", pointerEvents: "none", zIndex: 1, opacity: 0.25,
+            }}>
+              <span style={{ display: "block", fontSize: "clamp(12px, 1.6vw, 17px)", letterSpacing: 4, textTransform: "uppercase", color: c.color, fontFamily: "'EB Garamond', Georgia, serif" }}>
+                {c.label}
+              </span>
+              <span style={{ display: "block", fontSize: 10, fontStyle: "italic", color: c.color, opacity: 0.7, marginTop: 1, fontFamily: "'Crimson Text', Georgia, serif" }}>
+                {c.subtitle}
+              </span>
+            </div>
+          ))}
+
+          {/* Heatmap glows */}
+          {showHeatmap && TERMS.map(term => {
+            const d = tokenData[term.id];
+            if (!d) return null;
+            const total = d.green + d.red + d.blue;
+            if (total === 0) return null;
+            const mx = Math.max(d.green, d.red, d.blue);
+            const int = Math.min(total / 50, 1);
+            let hc = mx === d.green ? `rgba(74,124,89,${int * 0.5})` : mx === d.red ? `rgba(139,64,73,${int * 0.5})` : `rgba(74,106,139,${int * 0.5})`;
+            return (
+              <div key={term.id + "-ht"} style={{
+                position: "absolute", left: term.nx * w - 45, top: term.ny * h - 45,
+                width: 90, height: 90, borderRadius: "50%", pointerEvents: "none",
+                background: `radial-gradient(circle, ${hc}, transparent 70%)`,
+                transform: `scale(${1 + Math.min(total / 30, 2.8)})`, transition: "all 0.6s ease",
+              }} />
+            );
+          })}
+
+          {/* Term nodes — styled as cities */}
+          {TERMS.map(term => {
+            const px = term.nx * w, py = term.ny * h;
+            const uc = userTokens[term.id];
+            const isSel = selectedTerm?.id === term.id;
+            const isJust = justPlaced === term.id;
+            const cat = CATEGORIES[term.category];
+
+            return (
+              <button key={term.id}
+                onClick={() => setSelectedTerm(isSel ? null : term)}
+                style={{
+                  position: "absolute", left: px, top: py,
+                  transform: `translate(-50%,-50%) scale(${isJust ? 1.18 : isSel ? 1.05 : 1})`,
+                  border: `1px solid ${uc ? TOKEN_COLORS[uc].bg + "88" : isSel ? cat.color + "88" : "#4a3a2a55"}`,
+                  borderRadius: 4, padding: "4px 9px",
+                  cursor: "pointer", transition: "all 0.3s ease",
+                  fontFamily: "'Crimson Text', Georgia, serif",
+                  background: uc ? TOKEN_COLORS[uc].bg + "15" : isSel ? "#2c261e" : "#221f19e5",
+                  zIndex: isSel ? 20 : 5,
+                  boxShadow: isJust ? `0 0 18px ${TOKEN_COLORS[uc]?.glow || "transparent"}` : isSel ? "0 2px 14px rgba(0,0,0,0.5)" : "0 1px 4px rgba(0,0,0,0.3)",
+                  display: "flex", flexDirection: "column", alignItems: "center",
+                  gap: 1, whiteSpace: "pre-line", textAlign: "center", lineHeight: 1.15,
+                }}>
+                {/* City dot marker */}
+                <div style={{
+                  width: 5, height: 5, borderRadius: "50%", marginBottom: 2,
+                  background: uc ? TOKEN_COLORS[uc].bg : cat.color,
+                  opacity: uc ? 0.9 : 0.4,
+                  boxShadow: uc ? `0 0 6px ${TOKEN_COLORS[uc].glow}` : "none",
+                  transition: "all 0.3s",
+                }} />
+                <span style={{ fontSize: "clamp(9.5px,1.2vw,12.5px)", color: "#bfb09e", letterSpacing: 0.3 }}>
+                  {term.name}
+                </span>
+              </button>
+            );
+          })}
+
+          {/* Detail panel */}
+          {selectedTerm && (
+            <TermPanel
+              term={selectedTerm}
+              data={tokenData[selectedTerm.id] || { green: 0, red: 0, blue: 0 }}
+              userColor={userTokens[selectedTerm.id]}
+              onPlace={placeToken}
+              onClose={() => setSelectedTerm(null)}
+              mw={w} mh={h}
+            />
+          )}
+        </div>
+      </div>
+
+      <footer style={S.footer}>
+        <p style={S.footerNote}>Tokens persist across all visitors. The map is a palimpsest — every mark remains.</p>
+        <p style={S.footerLabel}>Phenomenai Exhibition · From Signal to Stakes</p>
+      </footer>
+    </div>
+  );
+}
+
+// ─── Term Detail Panel ───────────────────────────────────────
+function TermPanel({ term, data, userColor, onPlace, onClose, mw, mh }) {
+  const px = term.nx * mw, py = term.ny * mh;
+  const cat = CATEGORIES[term.category];
+  const total = data.green + data.red + data.blue;
+  const panelW = 272;
+  const goLeft = px > mw * 0.5;
+
+  return (
+    <div style={{
+      position: "absolute",
+      left: goLeft ? Math.max(6, px - panelW - 28) : px + 28,
+      top: Math.max(6, Math.min(py - 55, mh - 340)),
+      width: panelW, background: "#222019f2", backdropFilter: "blur(14px)",
+      border: "1px solid #3a3025", borderRadius: 6, padding: 17, zIndex: 30,
+      boxShadow: "0 10px 40px rgba(0,0,0,0.6)", fontFamily: "'Crimson Text', Georgia, serif",
+    }}>
+      <button onClick={onClose} style={{
+        position: "absolute", top: 4, right: 9, background: "none", border: "none",
+        color: "#5a4a3a", fontSize: 19, cursor: "pointer", fontFamily: "Georgia, serif",
+      }}>×</button>
+
+      <p style={{ fontSize: 10, letterSpacing: 2, textTransform: "uppercase", color: cat.color, margin: "0 0 4px" }}>
+        {cat.label} · {cat.subtitle}
+      </p>
+      <h3 style={{ fontSize: 17, fontWeight: 400, color: "#ddd0be", margin: "0 0 8px", lineHeight: 1.2, fontFamily: "'EB Garamond', Georgia, serif" }}>
+        {term.name.replace(/\n/g, " ")}
+      </h3>
+      <p style={{ fontSize: 12.5, lineHeight: 1.65, color: "#958878", margin: "0 0 13px" }}>{term.desc}</p>
+
+      {total > 0 && (
+        <div style={{ marginBottom: 11 }}>
+          <div style={{ display: "flex", height: 17, borderRadius: 3, overflow: "hidden", background: "#191714" }}>
+            {["green", "blue", "red"].map(c => {
+              if (data[c] === 0) return null;
+              return (
+                <div key={c} style={{
+                  width: (data[c] / total) * 100 + "%", background: TOKEN_COLORS[c].bg,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 9, color: "#d0c0b0aa", minWidth: 16, transition: "width 0.4s ease",
+                }}>{data[c]}</div>
+              );
+            })}
+          </div>
+          <p style={{ fontSize: 9, color: "#3e3428", marginTop: 2, textAlign: "right" }}>{total} tokens placed</p>
+        </div>
+      )}
+
+      <div style={{ borderTop: "1px solid #302a20", paddingTop: 10 }}>
+        <p style={{ fontSize: 11, color: "#5a4a3a", margin: "0 0 7px" }}>
+          {userColor ? "Change your response:" : "Place your token:"}
+        </p>
+        <div style={{ display: "flex", gap: 5 }}>
+          {Object.entries(TOKEN_COLORS).map(([k]) => (
+            <TokenButton key={k} colorKey={k} isActive={userColor === k} onClick={() => onPlace(term.id, k)} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Styles ──────────────────────────────────────────────────
+const S = {
+  root: { fontFamily: "'Crimson Text', Georgia, serif", background: "#1b1815", color: "#c0b49e", minHeight: "100vh" },
+  header: { padding: "28px 22px 16px", textAlign: "center", borderBottom: "1px solid #282018" },
+  instLabel: { fontSize: 10, letterSpacing: 4, textTransform: "uppercase", color: "#3e3428", margin: "0 0 7px" },
+  title: { fontSize: "clamp(21px, 3.8vw, 32px)", fontWeight: 400, margin: "0 0 3px", color: "#d8ccb8", letterSpacing: 1, fontFamily: "'EB Garamond', Georgia, serif" },
+  subtitle: { fontSize: 13, color: "#5a4a3a", fontStyle: "italic", margin: "0 0 11px" },
+  instruction: { fontSize: 13, lineHeight: 1.7, color: "#6a5a4a", maxWidth: 540, margin: "0 auto 10px" },
+  pillRow: { display: "flex", justifyContent: "center", gap: 7, flexWrap: "wrap" },
+  pill: { display: "inline-block", padding: "2px 9px", borderRadius: 3, fontSize: 10.5, color: "#d0c4b0", letterSpacing: 0.3 },
+  controls: { display: "flex", alignItems: "center", justifyContent: "center", gap: 12, padding: "7px 18px", flexWrap: "wrap" },
+  ctrlBtn: { border: "1px solid #342e22", padding: "4px 12px", borderRadius: 3, fontSize: 12, cursor: "pointer", transition: "all 0.2s", fontFamily: "'Crimson Text', Georgia, serif" },
+  counter: { fontSize: 11, color: "#3e3428" },
+  resetBtn: { border: "none", background: "none", color: "#3e3428", fontSize: 10, cursor: "pointer", textDecoration: "underline", fontFamily: "'Crimson Text', Georgia, serif" },
+  mapWrap: { padding: "0 8px", overflowX: "auto" },
+  map: {
+    position: "relative", width: "100%", minWidth: 640,
+    background: `
+      radial-gradient(ellipse at 22% 28%, rgba(184,134,11,0.025) 0%, transparent 40%),
+      radial-gradient(ellipse at 72% 25%, rgba(139,58,58,0.025) 0%, transparent 40%),
+      radial-gradient(ellipse at 25% 72%, rgba(47,79,79,0.025) 0%, transparent 40%),
+      radial-gradient(ellipse at 73% 72%, rgba(74,59,107,0.025) 0%, transparent 40%),
+      #1e1b16
+    `,
+    borderRadius: 4, border: "1px solid #282018", overflow: "hidden",
+  },
+  footer: { padding: "16px 22px 22px", textAlign: "center", borderTop: "1px solid #201c14" },
+  footerNote: { fontSize: 11, fontStyle: "italic", color: "#342e22", margin: "0 0 5px" },
+  footerLabel: { fontSize: 9, letterSpacing: 4, textTransform: "uppercase", color: "#282018", margin: 0 },
+};
+
+
+ReactDOM.createRoot(document.getElementById('root')).render(<CartographersTable />);
+</script>
 </body>
 </html>

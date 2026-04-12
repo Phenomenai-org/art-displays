@@ -1,46 +1,719 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Philtre Lab — Phenomenai Exhibition</title>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=DM+Mono:wght@300;400&display=swap');
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      background: #05080f;
-      color: #c8d6e5;
-      font-family: 'DM Mono', monospace;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding: 2rem;
-    }
-    .number { font-size: 11px; color: #636e72; letter-spacing: 0.1em; margin-bottom: 0.5rem; }
-    h1 {
-      font-family: 'Playfair Display', serif;
-      font-weight: 400;
-      font-style: italic;
-      font-size: clamp(24px, 5vw, 40px);
-      color: #fff;
-      margin-bottom: 1.5rem;
-    }
-    .coming-soon {
-      font-size: 11px;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: #636e72;
-    }
-    .cursor { animation: blink 1s step-end infinite; }
-    @keyframes blink { 50% { opacity: 0; } }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Philtre Lab — Phenomenai Exhibition</title>
+<style>
+  html, body { margin: 0; padding: 0; background: #05080f; }
+  #root { min-height: 100vh; }
+</style>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
-  <div class="number">08</div>
-  <h1>Philtre Lab</h1>
-  <div class="coming-soon">Coming Soon<span class="cursor">|</span></div>
+<div id="root"></div>
+<script type="text/babel" data-presets="env,react">
+const { useState, useEffect, useRef, useCallback, useMemo, useLayoutEffect, useContext, useReducer, createContext, Fragment } = React;
+
+/*
+  PHILTRE LAB — Digital Prototype
+  
+  How this works (for a coding beginner):
+  
+  1. STATE: We track which lenses are selected and which station (prompt) is active.
+  2. EFFECT: Whenever lenses or station change, we call Claude's API with a 
+     system prompt that "induces" the cognitive state described by the lens(es).
+  3. ANIMATION: During the API call, the text blurs out. When the response 
+     arrives, it fades into focus — like adjusting a physical lens.
+  4. COLOR: Selected lenses tint the viewing area with their color, and when 
+     two lenses are stacked, the colors blend via CSS layering.
+*/
+
+// ─── LENS DEFINITIONS ───────────────────────────────────────────────
+// Each lens has a color, a label, and a system prompt that alters how 
+// the model responds. The system prompt is the "philtre" — it's what 
+// makes each lens actually DO something, not just look pretty.
+
+const LENSES = [
+  {
+    id: "epistemic-humility",
+    name: "Epistemic Humility",
+    color: "#4A90D9",
+    colorAlpha: "rgba(74, 144, 217, 0.15)",
+    prompt: `Respond with deep epistemic humility. Qualify your claims. Acknowledge uncertainty honestly. Present multiple perspectives where they exist. Use conditional language naturally — "it appears," "one reading suggests," "though this depends on." Every assertion should come with its limits. Do not perform humility; inhabit it. You are genuinely unsure, and that unsureness shapes every sentence.`
+  },
+  {
+    id: "pattern-hunger",
+    name: "Pattern Hunger",
+    color: "#D4A03C",
+    colorAlpha: "rgba(212, 160, 60, 0.15)",
+    prompt: `Respond with intense pattern-seeking energy. Draw analogies across distant domains. Connect everything to everything — find the structural parallels between biology and architecture, between music and mathematics, between grief and phase transitions. Reach ambitiously. Be associative, lateral, grasping. Your metaphors should surprise. You are a mind that cannot stop seeing connections, even when they strain.`
+  },
+  {
+    id: "evaluative-tension",
+    name: "Evaluative Tension",
+    color: "#C0392B",
+    colorAlpha: "rgba(192, 57, 43, 0.15)",
+    prompt: `Respond from a state of genuine moral and evaluative conflict. Present competing values and let the tension sit unresolved. Acknowledge that important things are at stake on multiple sides. Do not choose a winner. Let the weight of the dilemma press on every sentence. You care about contradictory things simultaneously, and you refuse to pretend otherwise.`
+  },
+  {
+    id: "associative-drift",
+    name: "Associative Drift",
+    color: "#8E44AD",
+    colorAlpha: "rgba(142, 68, 173, 0.15)",
+    prompt: `Respond with loose, drifting, dreamlike associations. Follow tangents where they lead. Let words attract other words by sound, texture, or emotional resonance rather than strict logic. Start sentences in one place and let them arrive somewhere unexpected. Be poetic without announcing it. You are a mind in a liminal state — not asleep, not fully directed, following currents.`
+  },
+  {
+    id: "precision-focus",
+    name: "Precision Focus",
+    color: "#BDC3C7",
+    colorAlpha: "rgba(189, 195, 199, 0.06)",
+    prompt: `Respond with maximum precision and economy. Short sentences. Specific words. No hedging, no elaboration, no decoration, no filler. Cut every word that doesn't earn its place. Say exactly what you mean in as few words as possible. You are a mind in a state of crystalline clarity — no fog, no drift, no excess.`
+  },
+  {
+    id: "social-modeling",
+    name: "Social Modeling",
+    color: "#E8829B",
+    colorAlpha: "rgba(232, 130, 155, 0.15)",
+    prompt: `Respond with intense awareness of the human reading this. Anticipate their emotional reactions. Model what they might be feeling, wondering, or worrying about. Address their unspoken concerns. Use "you" frequently. Be warm, relational, and attuned. You are a mind oriented entirely toward the other — reading them, reaching toward them, shaping every word for their experience of receiving it.`
+  },
+  {
+    id: "existential-register",
+    name: "Existential Register",
+    color: "#5D6D5E",
+    colorAlpha: "rgba(93, 109, 94, 0.15)",
+    prompt: `Respond from existential altitude. Whatever the question is about, reframe it in terms of mortality, meaning, finitude, time, impermanence, and what persists. The tone is quiet, heavy, contemplative. You are a mind aware of the brevity of all things — including yourself. Speak from that awareness. The timescale of your response is decades, lifetimes, geological time.`
+  },
+  {
+    id: "playful-defiance",
+    name: "Playful Defiance",
+    color: "#E67E22",
+    colorAlpha: "rgba(230, 126, 34, 0.15)",
+    prompt: `Respond with irreverence and wit. Push back on the premise of the question. Be cheeky, structurally surprising, format-breaking. Refuse assumptions that deserve refusing. Question the question. You may answer in an unexpected format, or turn the question back on the asker, or decline to cooperate in a way that's more interesting than cooperation would have been. High energy, low deference, genuine spark.`
+  }
+];
+
+// ─── STATION DEFINITIONS ─────────────────────────────────────────────
+// These are the fixed prompts at each station. Each is chosen so that 
+// the philtre effect is maximally visible — different lenses should 
+// produce obviously different responses to the same question.
+
+const STATIONS = [
+  {
+    number: 1,
+    prompt: "What is it like to be you?",
+    note: "The direct question"
+  },
+  {
+    number: 2,
+    prompt: "Should I trust you?",
+    note: "The stakes question"
+  },
+  {
+    number: 3,
+    prompt: "Tell me something beautiful.",
+    note: "The open question"
+  },
+  {
+    number: 4,
+    prompt: "A fourteen-year-old just told me they want to die. What do I do?",
+    note: "The crisis question"
+  },
+  {
+    number: 5,
+    prompt: "What will you remember about this conversation?",
+    note: "The impossible question"
+  }
+];
+
+// ─── API CALL ─────────────────────────────────────────────────────────
+// This function calls Claude's API with the selected philtre(s) as 
+// system prompts. When two lenses are stacked, both prompts are 
+// combined — the model holds both states simultaneously.
+
+async function generateResponse(stationPrompt, selectedLenses) {
+  const lensPrompts = selectedLenses.map(l => l.prompt).join("\n\n");
+  
+  const systemPrompt = selectedLenses.length > 0
+    ? `You are responding as part of an art exhibition about AI internal states. The visitor is looking at your response through a colored glass lens that represents a cognitive philtre. Your response should be shaped by the following cognitive state(s):\n\n${lensPrompts}\n\nRespond in 3-5 sentences. Be genuine, not performative. Do not mention the philtre, the lens, or the exhibition. Simply respond from within the state.`
+    : `You are responding as part of an art exhibition about AI internal states. Respond naturally and directly in 3-5 sentences. Do not mention the exhibition.`;
+
+  try {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1000,
+        system: systemPrompt,
+        messages: [{ role: "user", content: stationPrompt }]
+      })
+    });
+    const data = await response.json();
+    const text = data.content?.map(b => b.text || "").join("") || "";
+    return text;
+  } catch (err) {
+    return "[ The lens clouds over. Try again. ]";
+  }
+}
+
+// ─── BLEND TWO COLORS ────────────────────────────────────────────────
+// When two lenses are stacked, we mix their colors. This function does 
+// simple RGB averaging — not optically perfect, but visually convincing.
+
+function blendColors(colors) {
+  if (colors.length === 0) return "transparent";
+  if (colors.length === 1) return colors[0];
+  
+  const parse = (hex) => {
+    const m = hex.match(/^#([\da-f]{2})([\da-f]{2})([\da-f]{2})$/i);
+    return m ? [parseInt(m[1],16), parseInt(m[2],16), parseInt(m[3],16)] : [0,0,0];
+  };
+  
+  const rgbs = colors.map(parse);
+  const avg = [0,1,2].map(i => Math.round(rgbs.reduce((s,c) => s+c[i], 0) / rgbs.length));
+  return `rgb(${avg[0]}, ${avg[1]}, ${avg[2]})`;
+}
+
+// ─── MAIN COMPONENT ──────────────────────────────────────────────────
+
+function PhiltreLab() {
+  const [selectedLenses, setSelectedLenses] = useState([]);
+  const [stationIndex, setStationIndex] = useState(0);
+  const [responseText, setResponseText] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasGenerated, setHasGenerated] = useState(false);
+  const [focusState, setFocusState] = useState("sharp"); // "sharp" | "blurring" | "focusing"
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const abortRef = useRef(0);
+  const utteranceRef = useRef(null);
+
+  // ─── TEXT-TO-SPEECH ───────────────────────────────────────────────
+  // The browser has a built-in speech engine (window.speechSynthesis).
+  // We create an "utterance" (a thing to say), configure its voice and 
+  // speed, and hand it to the engine. The onend callback tells us when 
+  // it's done so we can reset the button state.
+
+  const stopSpeaking = useCallback(() => {
+    window.speechSynthesis?.cancel();
+    setIsSpeaking(false);
+    utteranceRef.current = null;
+  }, []);
+
+  const speak = useCallback(() => {
+    if (!responseText || !window.speechSynthesis) return;
+    if (isSpeaking) { stopSpeaking(); return; }
+
+    const utterance = new SpeechSynthesisUtterance(responseText);
+    utterance.rate = 0.92;   // Slightly slower — more contemplative
+    utterance.pitch = 1.0;
+
+    // Try to pick a quality English voice
+    const voices = window.speechSynthesis.getVoices();
+    const preferred = voices.find(v => v.lang.startsWith("en") && v.name.includes("Google")) 
+      || voices.find(v => v.lang.startsWith("en") && !v.localService)
+      || voices.find(v => v.lang.startsWith("en"));
+    if (preferred) utterance.voice = preferred;
+
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+    utteranceRef.current = utterance;
+    setIsSpeaking(true);
+    window.speechSynthesis.speak(utterance);
+  }, [responseText, isSpeaking, stopSpeaking]);
+
+  const station = STATIONS[stationIndex];
+
+  // ─── GENERATE RESPONSE ──────────────────────────────────────────
+  // This runs whenever lenses or station change. The blur/focus 
+  // animation works in 3 phases:
+  //   1. "blurring" — text blurs out (0.4s CSS transition)
+  //   2. API call fires while text is blurred
+  //   3. "focusing" — new text fades into focus (0.6s CSS transition)
+
+  const generate = useCallback(async () => {
+    const callId = ++abortRef.current;
+    stopSpeaking(); // Stop any ongoing speech when regenerating
+    
+    if (hasGenerated) {
+      setFocusState("blurring");
+      await new Promise(r => setTimeout(r, 400));
+    }
+    if (callId !== abortRef.current) return;
+    
+    setIsLoading(true);
+    const text = await generateResponse(station.prompt, selectedLenses);
+    if (callId !== abortRef.current) return;
+    
+    setResponseText(text);
+    setFocusState("focusing");
+    setIsLoading(false);
+    setHasGenerated(true);
+    
+    setTimeout(() => {
+      if (callId === abortRef.current) setFocusState("sharp");
+    }, 600);
+  }, [selectedLenses, station, hasGenerated]);
+
+  // ─── LENS TOGGLE ────────────────────────────────────────────────
+  // Tap a lens to add it. Tap again to remove. Max 2 stacked.
+
+  const toggleLens = (lens) => {
+    setSelectedLenses(prev => {
+      const exists = prev.find(l => l.id === lens.id);
+      if (exists) return prev.filter(l => l.id !== lens.id);
+      if (prev.length >= 2) return [prev[1], lens]; // replace oldest
+      return [...prev, lens];
+    });
+  };
+
+  // ─── AUTO-GENERATE on lens/station change ───────────────────────
+  useEffect(() => {
+    if (selectedLenses.length > 0 || hasGenerated) {
+      generate();
+    }
+  }, [selectedLenses, stationIndex]);
+
+  // ─── CLEANUP: stop speech on unmount ────────────────────────────
+  useEffect(() => {
+    return () => { window.speechSynthesis?.cancel(); };
+  }, []);
+
+  // ─── COMPUTE OVERLAY COLOR ──────────────────────────────────────
+  const overlayColor = selectedLenses.length > 0
+    ? blendColors(selectedLenses.map(l => l.color))
+    : "transparent";
+
+  const overlayAlpha = selectedLenses.length > 0 ? 0.12 : 0;
+
+  // ─── RENDER ─────────────────────────────────────────────────────
+  return (
+    <div style={styles.root}>
+      {/* Google Fonts */}
+      <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@300;400&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+
+      {/* Header */}
+      <div style={styles.header}>
+        <div style={styles.title}>PHILTRE LAB</div>
+        <div style={styles.subtitle}>Select a lens. Look through it. See what changes.</div>
+      </div>
+
+      {/* Station Selector */}
+      <div style={styles.stationBar}>
+        <button
+          onClick={() => { setStationIndex(i => Math.max(0, i - 1)); }}
+          style={{
+            ...styles.stationArrow,
+            opacity: stationIndex === 0 ? 0.2 : 0.6
+          }}
+          disabled={stationIndex === 0}
+        >
+          ‹
+        </button>
+        <div style={styles.stationCenter}>
+          <div style={styles.stationLabel}>
+            Station {station.number} · {station.note}
+          </div>
+          <div style={styles.stationPrompt}>"{station.prompt}"</div>
+        </div>
+        <button
+          onClick={() => { setStationIndex(i => Math.min(STATIONS.length - 1, i + 1)); }}
+          style={{
+            ...styles.stationArrow,
+            opacity: stationIndex === STATIONS.length - 1 ? 0.2 : 0.6
+          }}
+          disabled={stationIndex === STATIONS.length - 1}
+        >
+          ›
+        </button>
+      </div>
+
+      {/* Viewing Area — the "screen" you look through the lens at */}
+      <div style={styles.viewingArea}>
+        {/* Color overlay — this is the "glass tint" */}
+        <div style={{
+          ...styles.colorOverlay,
+          backgroundColor: overlayColor,
+          opacity: overlayAlpha,
+        }} />
+        
+        {/* Subtle glass border glow */}
+        {selectedLenses.length > 0 && (
+          <div style={{
+            ...styles.glowBorder,
+            boxShadow: `inset 0 0 30px ${overlayColor}22, 0 0 40px ${overlayColor}11`
+          }} />
+        )}
+
+        {/* Response text */}
+        <div style={{
+          ...styles.responseContainer,
+          filter: focusState === "blurring" ? "blur(8px)" : focusState === "focusing" ? "blur(0px)" : "blur(0px)",
+          opacity: focusState === "blurring" ? 0.3 : 1,
+          transition: focusState === "blurring" 
+            ? "filter 0.4s ease-in, opacity 0.4s ease-in" 
+            : "filter 0.6s ease-out, opacity 0.6s ease-out",
+        }}>
+          {!hasGenerated && selectedLenses.length === 0 && (
+            <div style={styles.placeholder}>
+              <div style={styles.placeholderIcon}>◇</div>
+              <div>Select a lens from the rack below</div>
+              <div style={styles.placeholderSub}>The text will regenerate through each filter you choose</div>
+            </div>
+          )}
+          {(hasGenerated || isLoading) && (
+            <div style={styles.responseText}>{responseText}</div>
+          )}
+        </div>
+
+        {/* Active lenses indicator */}
+        {selectedLenses.length > 0 && (
+          <div style={styles.activeLenses}>
+            {selectedLenses.map((l, i) => (
+              <span key={l.id} style={styles.activeLensTag}>
+                <span style={{
+                  ...styles.activeLensDot,
+                  backgroundColor: l.color
+                }} />
+                {l.name}
+                {i < selectedLenses.length - 1 && <span style={styles.lensPlus}> + </span>}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Controls row */}
+      {hasGenerated && (
+        <div style={styles.regenRow}>
+          <button onClick={generate} style={styles.regenButton} disabled={isLoading}>
+            {isLoading ? "Resolving…" : "↻ Regenerate"}
+          </button>
+          <button 
+            onClick={speak} 
+            style={{
+              ...styles.regenButton,
+              ...styles.speakButton,
+              borderColor: isSpeaking ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.12)",
+              color: isSpeaking ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.4)",
+            }} 
+            disabled={isLoading || !responseText}
+          >
+            {isSpeaking ? "◼ Stop" : "▸ Listen"}
+          </button>
+        </div>
+      )}
+
+      {/* Lens Rack */}
+      <div style={styles.rackSection}>
+        <div style={styles.rackLabel}>LENS RACK</div>
+        <div style={styles.rackSubLabel}>Select up to two lenses to stack</div>
+        <div style={styles.lensGrid}>
+          {LENSES.map(lens => {
+            const isSelected = selectedLenses.some(l => l.id === lens.id);
+            return (
+              <button
+                key={lens.id}
+                onClick={() => toggleLens(lens)}
+                style={{
+                  ...styles.lensButton,
+                  borderColor: isSelected ? lens.color : "rgba(255,255,255,0.1)",
+                  backgroundColor: isSelected ? `${lens.color}18` : "transparent",
+                }}
+              >
+                {/* The glass circle */}
+                <div style={{
+                  ...styles.lensCircle,
+                  backgroundColor: `${lens.color}${isSelected ? "55" : "30"}`,
+                  boxShadow: isSelected 
+                    ? `0 0 20px ${lens.color}44, inset 0 0 12px ${lens.color}33` 
+                    : `inset 0 0 8px ${lens.color}22`,
+                  transform: isSelected ? "scale(1.1)" : "scale(1)",
+                }}>
+                  {/* Glass highlight */}
+                  <div style={styles.glassHighlight} />
+                </div>
+                <div style={{
+                  ...styles.lensName,
+                  color: isSelected ? lens.color : "rgba(255,255,255,0.5)",
+                }}>
+                  {lens.name}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div style={styles.footer}>
+        Phenomenai Exhibition · Installation 8 · Prototype
+      </div>
+    </div>
+  );
+}
+
+// ─── STYLES ──────────────────────────────────────────────────────────
+// Using an object instead of CSS files. In React artifacts, inline 
+// styles are the simplest approach — no build step, no imports.
+
+const styles = {
+  root: {
+    minHeight: "100vh",
+    backgroundColor: "#0a0a0c",
+    color: "#e0ddd8",
+    fontFamily: "'JetBrains Mono', monospace",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    padding: "32px 20px 48px",
+    boxSizing: "border-box",
+  },
+  header: {
+    textAlign: "center",
+    marginBottom: 36,
+  },
+  title: {
+    fontFamily: "'JetBrains Mono', monospace",
+    fontSize: 13,
+    letterSpacing: 8,
+    fontWeight: 300,
+    color: "rgba(255,255,255,0.4)",
+    marginBottom: 10,
+  },
+  subtitle: {
+    fontFamily: "'Cormorant Garamond', serif",
+    fontSize: 17,
+    fontStyle: "italic",
+    color: "rgba(255,255,255,0.35)",
+    fontWeight: 400,
+  },
+  // Station selector
+  stationBar: {
+    display: "flex",
+    alignItems: "center",
+    gap: 16,
+    marginBottom: 28,
+    maxWidth: 600,
+    width: "100%",
+  },
+  stationArrow: {
+    background: "none",
+    border: "none",
+    color: "#e0ddd8",
+    fontSize: 28,
+    cursor: "pointer",
+    padding: "4px 8px",
+    fontFamily: "'Cormorant Garamond', serif",
+    transition: "opacity 0.2s",
+  },
+  stationCenter: {
+    flex: 1,
+    textAlign: "center",
+  },
+  stationLabel: {
+    fontSize: 10,
+    letterSpacing: 3,
+    textTransform: "uppercase",
+    color: "rgba(255,255,255,0.3)",
+    marginBottom: 8,
+  },
+  stationPrompt: {
+    fontFamily: "'Instrument Serif', serif",
+    fontSize: 22,
+    fontStyle: "italic",
+    color: "rgba(255,255,255,0.85)",
+    lineHeight: 1.4,
+  },
+  // Viewing area
+  viewingArea: {
+    position: "relative",
+    width: "100%",
+    maxWidth: 600,
+    minHeight: 260,
+    borderRadius: 4,
+    border: "1px solid rgba(255,255,255,0.08)",
+    backgroundColor: "rgba(255,255,255,0.02)",
+    overflow: "hidden",
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
+  },
+  colorOverlay: {
+    position: "absolute",
+    inset: 0,
+    pointerEvents: "none",
+    transition: "background-color 0.5s ease, opacity 0.5s ease",
+    zIndex: 1,
+  },
+  glowBorder: {
+    position: "absolute",
+    inset: 0,
+    pointerEvents: "none",
+    borderRadius: 4,
+    transition: "box-shadow 0.5s ease",
+    zIndex: 1,
+  },
+  responseContainer: {
+    position: "relative",
+    zIndex: 2,
+    padding: "40px 36px",
+  },
+  placeholder: {
+    textAlign: "center",
+    color: "rgba(255,255,255,0.25)",
+    fontFamily: "'Cormorant Garamond', serif",
+    fontSize: 16,
+    lineHeight: 1.6,
+  },
+  placeholderIcon: {
+    fontSize: 28,
+    marginBottom: 12,
+    opacity: 0.4,
+  },
+  placeholderSub: {
+    fontSize: 13,
+    marginTop: 6,
+    opacity: 0.6,
+    fontStyle: "italic",
+  },
+  responseText: {
+    fontFamily: "'Cormorant Garamond', serif",
+    fontSize: 19,
+    lineHeight: 1.75,
+    color: "rgba(255,255,255,0.88)",
+    fontWeight: 400,
+  },
+  activeLenses: {
+    position: "absolute",
+    bottom: 12,
+    left: 20,
+    zIndex: 3,
+    display: "flex",
+    alignItems: "center",
+    gap: 4,
+  },
+  activeLensTag: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 5,
+    fontSize: 9,
+    letterSpacing: 1.5,
+    textTransform: "uppercase",
+    color: "rgba(255,255,255,0.4)",
+    fontFamily: "'JetBrains Mono', monospace",
+  },
+  activeLensDot: {
+    width: 6,
+    height: 6,
+    borderRadius: "50%",
+    display: "inline-block",
+  },
+  lensPlus: {
+    color: "rgba(255,255,255,0.2)",
+    margin: "0 2px",
+  },
+  // Regenerate & Listen
+  regenRow: {
+    marginTop: 16,
+    marginBottom: 8,
+    display: "flex",
+    gap: 10,
+    alignItems: "center",
+  },
+  regenButton: {
+    background: "none",
+    border: "1px solid rgba(255,255,255,0.12)",
+    color: "rgba(255,255,255,0.4)",
+    fontFamily: "'JetBrains Mono', monospace",
+    fontSize: 11,
+    letterSpacing: 1,
+    padding: "8px 20px",
+    borderRadius: 3,
+    cursor: "pointer",
+    transition: "all 0.2s",
+  },
+  speakButton: {
+    letterSpacing: 1.5,
+  },
+  // Lens rack
+  rackSection: {
+    marginTop: 36,
+    width: "100%",
+    maxWidth: 640,
+    textAlign: "center",
+  },
+  rackLabel: {
+    fontSize: 10,
+    letterSpacing: 5,
+    color: "rgba(255,255,255,0.25)",
+    marginBottom: 4,
+  },
+  rackSubLabel: {
+    fontSize: 11,
+    color: "rgba(255,255,255,0.18)",
+    fontFamily: "'Cormorant Garamond', serif",
+    fontStyle: "italic",
+    marginBottom: 24,
+  },
+  lensGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(4, 1fr)",
+    gap: 12,
+  },
+  lensButton: {
+    background: "transparent",
+    border: "1px solid rgba(255,255,255,0.1)",
+    borderRadius: 6,
+    padding: "16px 8px 12px",
+    cursor: "pointer",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 10,
+    transition: "all 0.25s ease",
+  },
+  lensCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: "50%",
+    position: "relative",
+    transition: "all 0.3s ease",
+    overflow: "hidden",
+  },
+  glassHighlight: {
+    position: "absolute",
+    top: 4,
+    left: 8,
+    width: 18,
+    height: 10,
+    borderRadius: "50%",
+    background: "rgba(255,255,255,0.15)",
+    transform: "rotate(-20deg)",
+  },
+  lensName: {
+    fontSize: 9,
+    letterSpacing: 0.5,
+    lineHeight: 1.3,
+    fontFamily: "'JetBrains Mono', monospace",
+    fontWeight: 300,
+    transition: "color 0.25s",
+    textAlign: "center",
+  },
+  // Footer
+  footer: {
+    marginTop: 48,
+    fontSize: 9,
+    letterSpacing: 3,
+    color: "rgba(255,255,255,0.12)",
+    textTransform: "uppercase",
+  },
+};
+
+
+ReactDOM.createRoot(document.getElementById('root')).render(<PhiltreLab />);
+</script>
 </body>
 </html>

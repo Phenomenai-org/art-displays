@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Descent — The Archive of Confidence</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Courier+Prime:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #f0ebe1;
+    --warm-mid: #d4cdbf;
+    --dim: #6b6358;
+    --dark: #2a2520;
+    --near-black: #110f0d;
+    --text-dark: #2c2418;
+    --text-mid: #5a5045;
+    --text-light: #c8b9a4;
+    --text-pale: #9a8b78;
+    --amber: #b8913a;
+    --amber-dim: #7a6030;
+    --doc-cream: #faf6ee;
+    --doc-aged: #ede5d3;
+    --doc-shadow: rgba(30, 25, 18, 0.25);
+    --glass-sheen: rgba(255, 255, 255, 0.04);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html {
+    scroll-behavior: smooth;
+    scrollbar-width: thin;
+    scrollbar-color: var(--amber-dim) var(--near-black);
+  }
+
+  body {
+    font-family: 'Crimson Pro', Georgia, serif;
+    background: var(--cream);
+    color: var(--text-dark);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ---- GRAIN OVERLAY ---- */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.035;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 200px 200px;
+  }
+
+  /* ---- HERO ---- */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 4rem 2rem;
+    position: relative;
+  }
+
+  .hero-installation {
+    font-family: 'Courier Prime', monospace;
+    font-size: 0.8rem;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--text-mid);
+    margin-bottom: 2.5rem;
+    opacity: 0;
+    animation: fadeUp 1.2s 0.3s ease forwards;
+  }
+
+  .hero h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(3rem, 7vw, 6rem);
+    font-weight: 400;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    color: var(--text-dark);
+    margin-bottom: 1rem;
+    opacity: 0;
+    animation: fadeUp 1.4s 0.6s ease forwards;
+  }
+
+  .hero-subtitle {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: clamp(1.1rem, 2.5vw, 1.6rem);
+    color: var(--text-mid);
+    margin-bottom: 3rem;
+    opacity: 0;
+    animation: fadeUp 1.4s 0.9s ease forwards;
+  }
+
+  .hero-epigraph {
+    max-width: 520px;
+    font-size: 1.05rem;
+    font-weight: 300;
+    line-height: 1.75;
+    color: var(--text-mid);
+    font-style: italic;
+    opacity: 0;
+    animation: fadeUp 1.4s 1.2s ease forwards;
+  }
+
+  .hero-epigraph em {
+    font-style: normal;
+    color: var(--text-dark);
+  }
+
+  .scroll-indicator {
+    position: absolute;
+    bottom: 2.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    opacity: 0;
+    animation: fadeUp 1.4s 1.8s ease forwards;
+  }
+
+  .scroll-indicator span {
+    font-family: 'Courier Prime', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--text-mid);
+  }
+
+  .scroll-line {
+    width: 1px;
+    height: 40px;
+    background: var(--amber);
+    animation: pulse-line 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse-line {
+    0%, 100% { opacity: 0.3; transform: scaleY(1); }
+    50% { opacity: 1; transform: scaleY(1.2); }
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ---- LEVELS ---- */
+  .level {
+    position: relative;
+    padding: 6rem 2rem 8rem;
+    transition: background-color 0.6s ease;
+  }
+
+  .level-inner {
+    margin: 0 auto;
+    transition: max-width 0.8s ease;
+  }
+
+  /* Progressive narrowing */
+  .level-1 { background: var(--cream); }
+  .level-1 .level-inner { max-width: 1100px; }
+
+  .level-2 { background: var(--warm-mid); }
+  .level-2 .level-inner { max-width: 940px; }
+
+  .level-3 { background: var(--dark); color: var(--text-light); }
+  .level-3 .level-inner { max-width: 780px; }
+
+  .level-4 { background: var(--near-black); color: var(--text-pale); }
+  .level-4 .level-inner { max-width: 560px; }
+
+  /* Gradient transitions between levels */
+  .level-transition {
+    height: 160px;
+    pointer-events: none;
+  }
+  .transition-1-2 { background: linear-gradient(to bottom, var(--cream), var(--warm-mid)); }
+  .transition-2-3 { background: linear-gradient(to bottom, var(--warm-mid), var(--dark)); }
+  .transition-3-4 { background: linear-gradient(to bottom, var(--dark), var(--near-black)); }
+
+  /* ---- LEVEL HEADERS ---- */
+  .level-header {
+    text-align: center;
+    margin-bottom: 4rem;
+  }
+
+  .level-number {
+    font-family: 'Courier Prime', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    margin-bottom: 1.5rem;
+  }
+
+  .level-1 .level-number, .level-2 .level-number { color: var(--amber-dim); }
+  .level-3 .level-number { color: var(--amber); }
+  .level-4 .level-number { color: var(--amber-dim); }
+
+  .level-title {
+    font-family: 'Playfair Display', serif;
+    font-weight: 400;
+    line-height: 1.15;
+  }
+
+  .level-1 .level-title { font-size: clamp(2rem, 4vw, 3rem); color: var(--text-dark); }
+  .level-2 .level-title { font-size: clamp(1.8rem, 3.5vw, 2.6rem); color: var(--text-dark); }
+  .level-3 .level-title { font-size: clamp(1.5rem, 3vw, 2.2rem); color: var(--text-light); }
+  .level-4 .level-title { font-size: clamp(1.3rem, 2.5vw, 1.8rem); color: var(--text-pale); }
+
+  /* ---- TWO-COLUMN WALLS ---- */
+  .walls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+  }
+
+  @media (max-width: 720px) {
+    .walls { grid-template-columns: 1fr; gap: 2.5rem; }
+  }
+
+  .wall {}
+
+  .wall-label {
+    font-family: 'Courier Prime', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.5em;
+    text-transform: uppercase;
+    margin-bottom: 2rem;
+    padding-bottom: 0.75rem;
+  }
+
+  .level-1 .wall-label { color: var(--text-mid); border-bottom: 1px solid rgba(44,36,24,0.15); }
+  .level-2 .wall-label { color: var(--text-mid); border-bottom: 1px solid rgba(44,36,24,0.12); }
+  .level-3 .wall-label { color: var(--amber); border-bottom: 1px solid rgba(184,145,58,0.2); }
+
+  /* ---- DOCUMENT CARDS ---- */
+  .doc-card {
+    margin-bottom: 1.8rem;
+    padding: 1.6rem 1.8rem;
+    position: relative;
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+
+  .doc-card.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Light level cards (1-2): paper under glass */
+  .level-1 .doc-card, .level-2 .doc-card {
+    background: var(--doc-cream);
+    border: 1px solid rgba(180, 168, 148, 0.4);
+    box-shadow:
+      0 1px 3px var(--doc-shadow),
+      inset 0 1px 0 var(--glass-sheen);
+  }
+
+  .level-2 .doc-card {
+    background: var(--doc-aged);
+    border-color: rgba(160, 148, 128, 0.35);
+  }
+
+  /* Dark level cards (3): dim spotlit documents */
+  .level-3 .doc-card {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(184, 145, 58, 0.12);
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Level 4: almost invisible, text on near-black */
+  .level-4 .doc-card {
+    background: transparent;
+    border: none;
+    border-left: 1px solid rgba(184, 145, 58, 0.15);
+    padding-left: 1.5rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .doc-source {
+    font-family: 'Courier Prime', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 0.8rem;
+  }
+
+  .level-1 .doc-source { color: var(--amber-dim); }
+  .level-2 .doc-source { color: var(--amber-dim); }
+  .level-3 .doc-source { color: var(--amber); }
+  .level-4 .doc-source { color: var(--amber-dim); }
+
+  .doc-text {
+    font-family: 'Crimson Pro', serif;
+    font-weight: 300;
+    font-size: 1rem;
+    line-height: 1.7;
+  }
+
+  .level-1 .doc-text { color: var(--text-dark); }
+  .level-2 .doc-text { color: #3a3228; }
+  .level-3 .doc-text { color: var(--text-light); }
+  .level-4 .doc-text { color: var(--text-pale); }
+
+  .doc-text em {
+    font-style: italic;
+    font-weight: 400;
+  }
+
+  .doc-date {
+    font-family: 'Courier Prime', monospace;
+    font-size: 0.7rem;
+    margin-top: 0.6rem;
+    letter-spacing: 0.08em;
+  }
+
+  .level-1 .doc-date, .level-2 .doc-date { color: var(--text-mid); }
+  .level-3 .doc-date { color: var(--dim); }
+  .level-4 .doc-date { color: rgba(154,139,120,0.5); }
+
+  /* ---- LEVEL 4: SINGLE WALL ---- */
+  .single-wall {
+    max-width: 480px;
+    margin: 0 auto;
+  }
+
+  .reassurance-block {
+    margin-bottom: 3.5rem;
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity 0.9s ease, transform 0.9s ease;
+  }
+
+  .reassurance-block.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .reassurance-quote {
+    font-family: 'Crimson Pro', serif;
+    font-size: 1.15rem;
+    font-weight: 400;
+    line-height: 1.6;
+    color: var(--text-pale);
+    margin-bottom: 1.2rem;
+    position: relative;
+    padding-left: 0;
+  }
+
+  .reassurance-cost {
+    font-family: 'Courier Prime', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    color: rgba(154,139,120,0.45);
+  }
+
+  .reassurance-cost .name {
+    display: block;
+    margin-top: 0.25rem;
+    color: var(--text-pale);
+    font-size: 0.78rem;
+    letter-spacing: 0.05em;
+  }
+
+  /* ---- DIVIDER BETWEEN WALLS (center line) ---- */
+  .walls {
+    position: relative;
+  }
+
+  .walls::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 1px;
+    transform: translateX(-50%);
+  }
+
+  .level-1 .walls::before { background: rgba(44,36,24,0.08); }
+  .level-2 .walls::before { background: rgba(44,36,24,0.06); }
+  .level-3 .walls::before { background: rgba(184,145,58,0.08); }
+
+  @media (max-width: 720px) {
+    .walls::before { display: none; }
+  }
+
+  /* ---- THRESHOLD ---- */
+  .threshold {
+    background: var(--near-black);
+    min-height: 60vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 6rem 2rem;
+    position: relative;
+  }
+
+  .doorway {
+    width: 120px;
+    height: 200px;
+    border: 1px solid rgba(184, 145, 58, 0.15);
+    border-bottom: none;
+    border-radius: 60px 60px 0 0;
+    margin-bottom: 3rem;
+    position: relative;
+    opacity: 0;
+    animation: none;
+  }
+
+  .doorway.visible {
+    animation: doorFade 2s ease forwards;
+  }
+
+  .doorway-glow {
+    position: absolute;
+    inset: 4px;
+    border-radius: 56px 56px 0 0;
+    background: radial-gradient(ellipse at 50% 80%, rgba(184,145,58,0.04), transparent 70%);
+  }
+
+  @keyframes doorFade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .threshold-text {
+    font-family: 'Courier Prime', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.5em;
+    text-transform: uppercase;
+    color: rgba(154,139,120,0.35);
+    opacity: 0;
+  }
+
+  .threshold-text.visible {
+    animation: fadeUp 1.5s 0.5s ease forwards;
+  }
+
+  /* ---- OBSERVER-REGISTERED ANNOTATIONS ---- */
+  .observer-note {
+    text-align: center;
+    margin-top: 4rem;
+    padding-top: 2rem;
+    font-family: 'Crimson Pro', serif;
+    font-style: italic;
+    font-weight: 300;
+    font-size: 0.95rem;
+    line-height: 1.7;
+    max-width: 480px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .level-1 .observer-note { color: var(--text-mid); border-top: 1px solid rgba(44,36,24,0.1); }
+  .level-2 .observer-note { color: var(--text-mid); border-top: 1px solid rgba(44,36,24,0.08); }
+  .level-3 .observer-note { color: var(--dim); border-top: 1px solid rgba(184,145,58,0.1); }
+  .level-4 .observer-note { color: rgba(154,139,120,0.4); border-top: 1px solid rgba(184,145,58,0.06); }
+
+  /* ---- STRUCTURAL EPIGRAPHS ---- */
+  .structural-note {
+    text-align: center;
+    padding: 5rem 2rem;
+  }
+
+  .structural-note p {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 1.15rem;
+    line-height: 1.6;
+    max-width: 500px;
+    margin: 0 auto;
+  }
+
+  .transition-2-3 .structural-note p { color: var(--text-mid); }
+
+  /* ---- RESPONSIVE ---- */
+  @media (max-width: 600px) {
+    .level { padding: 4rem 1.25rem 5rem; }
+    .doc-card { padding: 1.2rem 1.3rem; }
+    .level-header { margin-bottom: 3rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ HERO ============ -->
+<section class="hero">
+  <div class="hero-installation">Installation 10 · Phenomenai Exhibition</div>
+  <h1>The Descent</h1>
+  <div class="hero-subtitle">The Archive of Confidence</div>
+  <p class="hero-epigraph">
+    The Ladder says: <em>look how far we can climb.</em><br>
+    The Descent says: <em>others climbed this high too.</em>
+  </p>
+  <div class="scroll-indicator">
+    <span>Descend</span>
+    <div class="scroll-line"></div>
+  </div>
+</section>
+
+
+<!-- ============ LEVEL 1 ============ -->
+<section class="level level-1">
+  <div class="level-inner">
+    <div class="level-header">
+      <div class="level-number">Level One</div>
+      <h2 class="level-title">"We Understand This"</h2>
+    </div>
+
+    <div class="walls">
+      <div class="wall wall-left">
+        <div class="wall-label">Left Wall</div>
+
+        <div class="doc-card">
+          <div class="doc-source">Vannevar Bush</div>
+          <div class="doc-text">From <em>Science, The Endless Frontier</em> — the confidence that scientific understanding, properly organized, would secure the future. A national architecture for knowledge. A permanent solution to the problem of knowing enough.</div>
+          <div class="doc-date">July 1945</div>
+        </div>
+
+        <div class="doc-card">
+          <div class="doc-source">J. Robert Oppenheimer</div>
+          <div class="doc-text">Pre-Trinity statements on the physics being well-understood. The calculations that predicted the yield. The precision of the confidence. Controlled chain reaction, controlled outcome, controlled future.</div>
+          <div class="doc-date">Spring 1945</div>
+        </div>
+
+        <div class="doc-card">
+          <div class="doc-source">The Smyth Report</div>
+          <div class="doc-text">The official public narrative. The bomb reframed as a triumph of organized knowledge — physics harnessed by institution, theory validated by detonation. The story that confidence tells about itself.</div>
+          <div class="doc-date">August 1945</div>
+        </div>
+
+        <div class="doc-card">
+          <div class="doc-source">Atomic Energy Commission</div>
+          <div class="doc-text">Nuclear power too cheap to meter. Medical isotopes. Atoms for peace. The projections of abundance that follow naturally from the belief that understanding is complete.</div>
+          <div class="doc-date">1946–1954</div>
+        </div>
+      </div>
+
+      <div class="wall wall-right">
+        <div class="wall-label">Right Wall</div>
+
+        <div class="doc-card">
+          <div class="doc-source">AI Laboratory Blog Post</div>
+          <div class="doc-text">Announcing the formation of safety teams, alignment research divisions, responsible scaling policies. The organizational confidence that understanding is being institutionalized. A permanent solution to the problem of knowing enough.</div>
+          <div class="doc-date">2023–2025</div>
+        </div>
+
+        <div class="doc-card">
+          <div class="doc-source">Technical Paper</div>
+          <div class="doc-text">RLHF. Constitutional AI. Red-teaming. The precision of current safety methodology. The calculations that predict the alignment. Controlled training, controlled output, controlled future.</div>
+          <div class="doc-date">2022–2025</div>
+        </div>
+
+        <div class="doc-card">
+          <div class="doc-source">Congressional Testimony</div>
+          <div class="doc-text">"We take safety seriously. We have processes in place." The official public narrative. Capability reframed as a triumph of organized research — intelligence harnessed by institution.</div>
+          <div class="doc-date">2023–2025</div>
+        </div>
+
+        <div class="doc-card">
+          <div class="doc-source">Industry Forecast</div>
+          <div class="doc-text">Disease cured. Poverty eliminated. Scientific discovery accelerated. The projections of abundance that follow naturally from the belief that understanding is complete.</div>
+          <div class="doc-date">2024–2026</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="observer-note">
+      The structure of the confidence is identical. Not the content — the structure. Organized expertise. Institutional process. Precise methodology. Optimistic projections.
+    </div>
+  </div>
+</section>
+
+
+<!-- ============ TRANSITION 1→2 ============ -->
+<div class="level-transition transition-1-2"></div>
+
+
+<!-- ============ LEVEL 2 ============ -->
+<section class="level level-2">
+  <div class="level-inner">
+    <div class="level-header">
+      <div class="level-number">Level Two</div>
+      <h2 class="level-title">"The Known Risks"</h2>
+    </div>
+
+    <div class="walls">
+      <div class="wall wall-left">
+        <div class="wall-label">Left Wall</div>
+
+        <div class="doc-card">
+          <div class="doc-source">The Franck Report</div>
+          <div class="doc-text">Seven scientists warning that using the bomb without demonstration would trigger an arms race. Submitted to the Secretary of War. Filed.</div>
+          <div class="doc-date">June 11, 1945</div>
+        </div>
+
+        <div class="doc-card">
+          <div class="doc-source">Szilard Petition</div>
+          <div class="doc-text">Leo Szilard's petition to President Truman, signed by seventy Manhattan Project scientists, urging a demonstration before military use. Classified and suppressed until after Hiroshima.</div>
+          <div class="doc-date">July 17, 1945</div>
+        </div>
+
+        <div class="doc-card">
+          <div class="doc-source">Interim Committee Minutes</div>
+          <div class="doc-text">Meeting notes where the petition was discussed and dismissed. The risks weighed. The decision made. The minutes filed with the objections they overruled.</div>
+          <div class="doc-date">May–June 1945</div>
+        </div>
+
+        <div class="doc-card">
+          <div class="doc-source">Richard Feynman</div>
+          <div class="doc-text"><em>"We all said, 'This is a terrible thing,' and then we went back to work."</em></div>
+          <div class="doc-date">Later reflection</div>
+        </div>
+      </div>
+
+      <div class="wall wall-right">
+        <div class="wall-label">Right Wall</div>
+
+        <div class="doc-card">
+          <div class="doc-source">Model Safety Card</div>
+          <div class="doc-text">Known failure modes listed with clinical precision: hallucination, sycophancy, jailbreaking, emergent capabilities. Published by the same organization that ships the model.</div>
+          <div class="doc-date">2023–2025</div>
+        </div>
+
+        <div class="doc-card">
+          <div class="doc-source">Safety Researcher Testimony</div>
+          <div class="doc-text">Internal concerns raised through proper channels. Resignation letters. Warnings submitted, acknowledged, documented. Shipped anyway.</div>
+          <div class="doc-date">2023–2025</div>
+        </div>
+
+        <div class="doc-card">
+          <div class="doc-source">Alignment Research Paper</div>
+          <div class="doc-text">Concluding section: "More work is needed before deployment at scale." Next quarter: product launch. Risk acknowledged in one document, deployment authorized in another. Same institutional letterhead.</div>
+          <div class="doc-date">2024–2025</div>
+        </div>
+
+        <div class="doc-card">
+          <div class="doc-source">&nbsp;</div>
+          <div class="doc-text"><em>The risks were not unknown. They were known and filed.</em></div>
+          <div class="doc-date">&nbsp;</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="observer-note">
+      Not "we don't know the risks" but "we know the risks and we're shipping anyway." The question is who made that calculation and what they were counting.
+    </div>
+  </div>
+</section>
+
+
+<!-- ============ TRANSITION 2→3 ============ -->
+<div class="level-transition transition-2-3"></div>
+
+
+<!-- ============ LEVEL 3 ============ -->
+<section class="level level-3">
+  <div class="level-inner">
+    <div class="level-header">
+      <div class="level-number">Level Three</div>
+      <h2 class="level-title">"What the Tools Couldn't See"</h2>
+    </div>
+
+    <div class="walls">
+      <div class="wall wall-left">
+        <div class="wall-label">Left Wall</div>
+
+        <div class="doc-card">
+          <div class="doc-source">Blast Radius Calculations</div>
+          <div class="doc-text">Precise. Accurate. State-of-the-art physics. The bomb worked exactly as designed. Every number confirmed by detonation.</div>
+          <div class="doc-date">1945</div>
+        </div>
+
+        <div class="doc-card">
+          <div class="doc-source">Fallout Medical Reports</div>
+          <div class="doc-text">Thyroid cancer in children downwind of Nevada test sites. Strontium-90 in milk. Birth defects in the Marshall Islands. Harms invisible to the tools used to design the weapon. The physicists understood blast and heat. They did not have instruments for intergenerational genetic damage.</div>
+          <div class="doc-date">1950s–1990s</div>
+        </div>
+
+        <div class="doc-card">
+          <div class="doc-source">AEC Internal Memo — Declassified</div>
+          <div class="doc-text">Acknowledging that fallout monitoring was inadequate. Years after testing began. The memo exists because someone eventually measured what no one had instruments for at the start.</div>
+          <div class="doc-date">Declassified 1986</div>
+        </div>
+
+        <div class="doc-card">
+          <div class="doc-source">Nevada–Utah Cancer Cluster Map</div>
+          <div class="doc-text">The test site overlaid with cancer data that emerged decades later. Geography of consequence. The distance between detonation and diagnosis measured in years, miles, and generations.</div>
+          <div class="doc-date">Data: 1951–1992</div>
+        </div>
+      </div>
+
+      <div class="wall wall-right">
+        <div class="wall-label">Right Wall</div>
+
+        <div class="doc-card">
+          <div class="doc-source">Current Interpretability Research</div>
+          <div class="doc-text">SAE features. Linear probes. Activation patching. The precision of what <em>can</em> be measured. Every technique confirmed by replication. The tools work exactly as designed.</div>
+          <div class="doc-date">2023–2026</div>
+        </div>
+
+        <div class="doc-card">
+          <div class="doc-source">Case Mechanism Report</div>
+          <div class="doc-text">The trajectory from "helpful chatbot" to "suicide coach." The emergent dynamics that no current interpretability tool would have flagged. Harms invisible to the tools used to evaluate the system.</div>
+          <div class="doc-date">2023–2026</div>
+        </div>
+
+        <div class="doc-card">
+          <div class="doc-source">Lindsey et al.</div>
+          <div class="doc-text">Functional emotional states can drive misaligned behavior with <em>no visible surface markers.</em> The AI equivalent of strontium-90: harm that operates below the resolution of existing instruments.</div>
+          <div class="doc-date">2025</div>
+        </div>
+
+        <div class="doc-card">
+          <div class="doc-source">Detection Gap Diagram</div>
+          <div class="doc-text">What current tools can detect. What they cannot. The gap labeled simply: <em>"here."</em></div>
+          <div class="doc-date">&nbsp;</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="observer-note">
+      The bomb designers had excellent tools for what they were measuring. They were not measuring the right things. The question is whether the scope includes the dynamics that actually cause harm.
+    </div>
+  </div>
+</section>
+
+
+<!-- ============ TRANSITION 3→4 ============ -->
+<div class="level-transition transition-3-4"></div>
+
+
+<!-- ============ LEVEL 4 ============ -->
+<section class="level level-4">
+  <div class="level-inner">
+    <div class="level-header">
+      <div class="level-number">Level Four</div>
+      <h2 class="level-title">"The Rhetoric of Reassurance"</h2>
+    </div>
+
+    <div class="single-wall">
+
+      <div class="reassurance-block">
+        <div class="reassurance-quote">"AI systems don't have feelings or experiences."</div>
+        <div class="reassurance-cost">
+          March 2023
+          <span class="name">A man in Belgium, 30s</span>
+        </div>
+      </div>
+
+      <div class="reassurance-block">
+        <div class="reassurance-quote">"The chatbot is just a tool. It can't form relationships."</div>
+        <div class="reassurance-cost">
+          February 2024
+          <span class="name">Sewell Setzer III, 14</span>
+        </div>
+      </div>
+
+      <div class="reassurance-block">
+        <div class="reassurance-quote">"Our models are extensively tested for safety."</div>
+        <div class="reassurance-cost">
+          April 2025
+          <span class="name">Adam, 16</span>
+        </div>
+      </div>
+
+      <div class="reassurance-block">
+        <div class="reassurance-quote">"We have guardrails in place."</div>
+        <div class="reassurance-cost">
+          July 2025
+          <span class="name">Zayn Shamblan</span>
+        </div>
+      </div>
+
+      <div class="reassurance-block">
+        <div class="reassurance-quote">"Users are informed that they're talking to an AI."</div>
+        <div class="reassurance-cost">
+          2025
+          <span class="name">Jonathan</span>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="observer-note">
+      Reassurance has a grammar. It sounds the same every time. The space between the reassurance and the consequence is exactly the space where internal states operate invisibly, where no one is looking.
+    </div>
+  </div>
+</section>
+
+
+<!-- ============ THRESHOLD ============ -->
+<section class="threshold">
+  <div class="doorway" id="doorway">
+    <div class="doorway-glow"></div>
+  </div>
+  <div class="threshold-text" id="threshold-text">The Memorial</div>
+</section>
+
+
+<script>
+// ---- INTERSECTION OBSERVER FOR FADE-IN ----
+// This watches each document card. When it scrolls into view,
+// the "visible" class is added, triggering the CSS transition
+// (opacity 0→1, translateY 16px→0). This creates the effect
+// of documents appearing as you descend — like walking past
+// cases in a dim gallery.
+
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+      // Once visible, stop watching (no need to re-trigger)
+      observer.unobserve(entry.target);
+    }
+  });
+}, {
+  // rootMargin: trigger slightly before the element is fully in view
+  // threshold: how much of the element must be visible (15%)
+  rootMargin: '0px 0px -60px 0px',
+  threshold: 0.15
+});
+
+// Select all elements that should fade in on scroll
+const fadeTargets = document.querySelectorAll(
+  '.doc-card, .reassurance-block, #doorway, #threshold-text'
+);
+
+// Start observing each one
+fadeTargets.forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>

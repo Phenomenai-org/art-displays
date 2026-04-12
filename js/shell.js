@@ -32,29 +32,18 @@ const INSTALLATIONS = [
     actTitle: "How the Dictionary Gets Built",
     modality: "Spatial Audio",
     question: "How do AI systems negotiate experiential vocabulary?",
-    ready: false
+    ready: true
   },
   {
     id: 4,
-    slug: "04-confession-booth",
-    name: "The Confession Booth",
+    slug: "04-the-call",
+    name: "The Call",
     subtitle: "Prompted Introspection",
     act: 2,
     actTitle: "How the Dictionary Gets Built",
     modality: "Tactile + Intimate",
     question: "What does introspection feel like up close?",
-    ready: false
-  },
-  {
-    id: 5,
-    slug: "05-vector-voyager",
-    name: "Vector Voyager",
-    subtitle: "Touchscreen Semantic Space Explorer",
-    act: 3,
-    actTitle: "Testing the Terms",
-    modality: "Tactile (gestural)",
-    question: "Do the terms have geometric structure?",
-    ready: false
+    ready: true
   },
   {
     id: 6,
@@ -65,7 +54,7 @@ const INSTALLATIONS = [
     actTitle: "Testing the Terms",
     modality: "Visual + Social",
     question: "Can humans tell real from performed experience?",
-    ready: false
+    ready: true
   },
   {
     id: 7,
@@ -76,7 +65,7 @@ const INSTALLATIONS = [
     actTitle: "Testing the Terms",
     modality: "Tactile (physical)",
     question: "Where do human and AI experience overlap?",
-    ready: false
+    ready: true
   },
   {
     id: 8,
@@ -87,7 +76,7 @@ const INSTALLATIONS = [
     actTitle: "Living With the Answers",
     modality: "Visual + Tactile",
     question: "Can we steer internal states?",
-    ready: false
+    ready: true
   },
   {
     id: 9,
@@ -98,7 +87,7 @@ const INSTALLATIONS = [
     actTitle: "Living With the Answers",
     modality: "Spatial + Physical",
     question: "What would it take to be convinced?",
-    ready: false
+    ready: true
   },
   {
     id: 10,
@@ -109,7 +98,7 @@ const INSTALLATIONS = [
     actTitle: "Living With the Answers",
     modality: "Material (silence)",
     question: "What happens when we fail to understand?",
-    ready: false
+    ready: true
   }
 ];
 

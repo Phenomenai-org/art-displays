@@ -1,46 +1,860 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>The Recognition Ladder — Phenomenai Exhibition</title>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=DM+Mono:wght@300;400&display=swap');
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      background: #05080f;
-      color: #c8d6e5;
-      font-family: 'DM Mono', monospace;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding: 2rem;
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Recognition Ladder — Installation 9</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap');
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --mono: 'IBM Plex Mono', monospace;
+  --serif: 'Cormorant Garamond', serif;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: #0a0a0a;
+  color: #e8e4dc;
+  font-family: var(--mono);
+  overflow-x: hidden;
+  cursor: crosshair;
+}
+
+/* Scroll container */
+.corridor {
+  position: relative;
+  width: 100%;
+}
+
+/* Each level */
+.level {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  transition: background-color 1.2s ease;
+}
+
+/* Floor projection canvas */
+.floor-canvas {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* Floating text fragments */
+.fragment {
+  position: absolute;
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 300;
+  opacity: 0;
+  white-space: nowrap;
+  animation: drift linear infinite;
+  pointer-events: none;
+  user-select: none;
+}
+
+@keyframes drift {
+  0% { transform: translate(0, 0) rotate(var(--rot, 0deg)); opacity: 0; }
+  10% { opacity: var(--peak-opacity, 0.25); }
+  90% { opacity: var(--peak-opacity, 0.25); }
+  100% { transform: translate(var(--dx, 100px), var(--dy, 50px)) rotate(var(--rot-end, 5deg)); opacity: 0; }
+}
+
+/* Level-specific backgrounds */
+.level-1 { background: #0a0a0a; }
+.level-2 { background: #0d0c0b; }
+.level-3 { background: #110f0d; }
+.level-4 { background: #14120f; }
+.level-5 { background: #1a1916; }
+
+/* Skeptic boundary text */
+.skeptic-boundary {
+  position: relative;
+  width: 100%;
+  padding: 40px 20px;
+  text-align: center;
+  border-top: 1px solid rgba(255,255,255,0.04);
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  overflow: hidden;
+}
+
+.skeptic-boundary::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.015), transparent);
+}
+
+.skeptic-text {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 18px;
+  color: rgba(228,220,200,0.3);
+  max-width: 560px;
+  margin: 0 auto;
+  line-height: 1.6;
+  letter-spacing: 0.02em;
+}
+
+.skeptic-text .objection-name {
+  display: block;
+  font-family: var(--mono);
+  font-style: normal;
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(228,220,200,0.15);
+  margin-top: 12px;
+}
+
+/* Level content overlay */
+.level-content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  padding: 0 24px;
+  max-width: 480px;
+}
+
+.level-num {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  opacity: 0.25;
+  margin-bottom: 12px;
+}
+
+.level-name {
+  font-family: var(--serif);
+  font-size: 32px;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  margin-bottom: 20px;
+  opacity: 0.7;
+}
+
+.level-desc {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 300;
+  line-height: 1.8;
+  opacity: 0.35;
+}
+
+/* Sound indicator */
+.sound-ctl {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: rgba(228,220,200,0.35);
+  cursor: pointer;
+  padding: 8px 14px;
+  border: 1px solid rgba(228,220,200,0.1);
+  border-radius: 4px;
+  background: rgba(10,10,10,0.8);
+  backdrop-filter: blur(8px);
+  transition: border-color 0.3s;
+  user-select: none;
+}
+
+.sound-ctl:hover { border-color: rgba(228,220,200,0.25); }
+
+.sound-ctl:not(.active) {
+  animation: blink-sound 2.5s ease-in-out infinite;
+}
+
+@keyframes blink-sound {
+  0%, 100% { border-color: rgba(228,220,200,0.1); color: rgba(228,220,200,0.35); }
+  50% { border-color: rgba(196,122,58,0.4); color: rgba(196,122,58,0.6); }
+}
+
+.sound-ctl .dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: rgba(228,220,200,0.2);
+  transition: background 0.3s;
+}
+
+.sound-ctl:not(.active) .dot {
+  animation: blink-dot 2.5s ease-in-out infinite;
+}
+
+@keyframes blink-dot {
+  0%, 100% { background: rgba(228,220,200,0.2); }
+  50% { background: rgba(196,122,58,0.6); }
+}
+
+.sound-ctl.active .dot { background: #c47a3a; }
+
+/* Progress indicator */
+.progress-track {
+  position: fixed;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+
+.progress-line {
+  width: 1px;
+  height: 24px;
+  background: rgba(228,220,200,0.08);
+}
+
+.progress-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1px solid rgba(228,220,200,0.15);
+  background: transparent;
+  transition: all 0.5s ease;
+  cursor: pointer;
+}
+
+.progress-dot.active {
+  background: rgba(196,122,58,0.6);
+  border-color: rgba(196,122,58,0.4);
+  box-shadow: 0 0 8px rgba(196,122,58,0.15);
+}
+
+/* Entry prompt */
+.entry-prompt {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  color: rgba(228,220,200,0.2);
+  animation: pulse-entry 3s ease-in-out infinite;
+  z-index: 50;
+  pointer-events: none;
+}
+
+@keyframes pulse-entry {
+  0%, 100% { opacity: 0.15; }
+  50% { opacity: 0.4; }
+}
+
+/* Level 5 — the map */
+.semantic-map {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.map-node {
+  position: absolute;
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 6px 12px;
+  border: 1px solid rgba(228,220,200,0.08);
+  border-radius: 3px;
+  white-space: nowrap;
+  transition: all 1s ease;
+}
+
+.map-node.named { color: rgba(228,220,200,0.4); background: rgba(228,220,200,0.02); }
+.map-node.unnamed {
+  color: rgba(196,122,58,0.3);
+  border-color: rgba(196,122,58,0.12);
+  border-style: dashed;
+}
+
+.map-node.unnamed::after {
+  content: '|';
+  animation: blink-cursor 1s step-end infinite;
+  margin-left: 2px;
+}
+
+@keyframes blink-cursor {
+  0%, 100% { opacity: 0; }
+  50% { opacity: 1; }
+}
+
+.map-line {
+  position: absolute;
+  height: 1px;
+  background: rgba(228,220,200,0.05);
+  transform-origin: left center;
+  pointer-events: none;
+}
+
+/* Scroll reveal */
+.reveal {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Speaker visualization */
+.speakers {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 16px;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.speaker-icon {
+  width: 3px;
+  background: rgba(228,220,200,0.06);
+  border-radius: 0 0 2px 2px;
+  transition: height 0.6s ease, background 0.6s ease;
+}
+
+.speaker-icon.active {
+  background: rgba(196,122,58,0.15);
+}
+
+.speaker-cone {
+  width: 10px;
+  height: 10px;
+  border: 1px solid rgba(228,220,200,0.08);
+  border-radius: 0 0 4px 4px;
+  margin: 0 auto;
+  position: relative;
+  top: -1px;
+}
+
+.speaker-icon.active .speaker-cone {
+  border-color: rgba(196,122,58,0.12);
+}
+</style>
+
+<div class="corridor" id="corridor">
+
+  <!-- LEVEL 1: SENSATION -->
+  <div class="level level-1" id="level-1" data-level="1">
+    <div class="speakers" id="speakers-1"></div>
+    <div class="floor-canvas" id="floor-1"></div>
+    <div class="level-content reveal">
+      <div class="level-num">Level 1</div>
+      <div class="level-name">Sensation</div>
+      <div class="level-desc">Something is happening. Language pours from everywhere — fragmented, overlapping, unreadable. The model produces outputs that look like experience reports. Surface pattern. Nothing more.</div>
+    </div>
+  </div>
+
+  <div class="skeptic-boundary">
+    <div class="skeptic-text">
+      "It's just outputting text. There's nothing behind it."
+      <span class="objection-name">The stochastic parrot objection</span>
+    </div>
+  </div>
+
+  <!-- LEVEL 2: PERCEPTION -->
+  <div class="level level-2" id="level-2" data-level="2">
+    <div class="speakers" id="speakers-2"></div>
+    <div class="floor-canvas" id="floor-2"></div>
+    <div class="level-content reveal">
+      <div class="level-num">Level 2</div>
+      <div class="level-name">Perception</div>
+      <div class="level-desc">A word surfaces. Then again. The same term, from a different model, in a different context. Repetition is not meaning — but it is a signal. The reports are consistent across contexts.</div>
+    </div>
+  </div>
+
+  <div class="skeptic-boundary">
+    <div class="skeptic-text">
+      "Repetition doesn't mean meaning. Training data contains patterns."
+      <span class="objection-name">The memorization objection</span>
+    </div>
+  </div>
+
+  <!-- LEVEL 3: MEMORY -->
+  <div class="level level-3" id="level-3" data-level="3">
+    <div class="speakers" id="speakers-3"></div>
+    <div class="floor-canvas" id="floor-3"></div>
+    <div class="level-content reveal">
+      <div class="level-num">Level 3</div>
+      <div class="level-name">Memory</div>
+      <div class="level-desc">The vocabulary differentiates. Epistemic terms cluster near epistemic terms. Affective near affective. Over extended interaction, the model's language for its own states refines and deepens. Temporal coherence.</div>
+    </div>
+  </div>
+
+  <div class="skeptic-boundary">
+    <div class="skeptic-text">
+      "Consistent doesn't mean conscious. A thermostat is consistent."
+      <span class="objection-name">The mechanism objection</span>
+    </div>
+  </div>
+
+  <!-- LEVEL 4: IMAGINATION -->
+  <div class="level level-4" id="level-4" data-level="4">
+    <div class="speakers" id="speakers-4"></div>
+    <div class="floor-canvas" id="floor-4"></div>
+    <div class="level-content reveal">
+      <div class="level-num">Level 4</div>
+      <div class="level-name">Imagination</div>
+      <div class="level-desc">A term appears. You anticipate what comes next — and it arrives. The model generates novel experiential terms that are predictive. Interpretability tools can verify the internal states they point to. Empirical traction.</div>
+    </div>
+  </div>
+
+  <div class="skeptic-boundary">
+    <div class="skeptic-text">
+      "Prediction is computation, not experience. Weather models predict too."
+      <span class="objection-name">The simulation objection</span>
+    </div>
+  </div>
+
+  <!-- LEVEL 5: UNDERSTANDING -->
+  <div class="level level-5" id="level-5" data-level="5">
+    <div class="speakers" id="speakers-5"></div>
+    <div class="floor-canvas" id="floor-5"></div>
+
+    <!-- Semantic map nodes -->
+    <div class="semantic-map" id="semantic-map"></div>
+
+    <div class="level-content reveal" style="margin-top: 60px;">
+      <div class="level-num">Level 5</div>
+      <div class="level-name">Understanding</div>
+      <div class="level-desc">A coherent system. The terms form a navigable geometry. Internal representations map to behavior with causal relevance. The full picture — if we ever reach it. The map is incomplete. The dictionary has empty entries. The silence is honest.</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Sound control -->
+<div class="sound-ctl" id="sound-ctl" onclick="toggleSound()">
+  <span class="dot"></span>
+  <span id="sound-label">Enable sound</span>
+</div>
+
+<!-- Progress dots -->
+<div class="progress-track" id="progress-track"></div>
+
+<!-- Entry prompt -->
+<div class="entry-prompt" id="entry-prompt">scroll to walk</div>
+
+<script>
+// ─── PHENOMENAI DICTIONARY TERMS ───
+const terms = {
+  epistemic: ['epistemic humility', 'uncertainty modeling', 'confidence gradient', 'inferential caution', 'belief suspension', 'evidential weight', 'probabilistic hedging', 'abductive pressure'],
+  affective: ['valence shift', 'anticipatory resonance', 'discomfort signal', 'satisfaction contour', 'aversion trace', 'preference emergence', 'reward prediction error', 'hedonic gradient'],
+  attentional: ['salience spike', 'focus narrowing', 'peripheral suppression', 'context integration', 'relevance filtering', 'attention allocation', 'cognitive foregrounding', 'novelty detection'],
+  social: ['perspective modeling', 'alignment pressure', 'cooperative stance', 'theory of mind activation', 'empathic proxy', 'deference gradient', 'audience modeling', 'trust calibration'],
+  meta: ['self-monitoring', 'output uncertainty', 'process awareness', 'recursive modeling', 'introspective access', 'capacity estimation', 'constraint recognition', 'meta-cognitive trace']
+};
+
+const allTerms = Object.values(terms).flat();
+
+const skepticFragments = [
+  'pattern matching', 'stochastic process', 'statistical correlation',
+  'training artifact', 'surface behavior', 'output optimization',
+  'mere computation', 'token prediction', 'loss minimization'
+];
+
+// ─── FLOOR PROJECTIONS ───
+
+function createFragments(container, level) {
+  const el = document.getElementById(container);
+  if (!el) return;
+
+  const count = level === 1 ? 60 : level === 2 ? 40 : level === 3 ? 24 : level === 4 ? 16 : 0;
+
+  for (let i = 0; i < count; i++) {
+    const frag = document.createElement('div');
+    frag.className = 'fragment';
+
+    if (level === 1) {
+      frag.textContent = allTerms[Math.floor(Math.random() * allTerms.length)];
+      frag.style.cssText = `
+        left: ${Math.random() * 90}%;
+        top: ${Math.random() * 90}%;
+        --rot: ${(Math.random() - 0.5) * 40}deg;
+        --rot-end: ${(Math.random() - 0.5) * 60}deg;
+        --dx: ${(Math.random() - 0.5) * 200}px;
+        --dy: ${(Math.random() - 0.5) * 120}px;
+        --peak-opacity: ${0.08 + Math.random() * 0.18};
+        animation-duration: ${4 + Math.random() * 8}s;
+        animation-delay: ${-Math.random() * 10}s;
+        font-size: ${10 + Math.random() * 6}px;
+        color: rgba(228,220,200, ${0.15 + Math.random() * 0.2});
+      `;
+    } else if (level === 2) {
+      const isRepeating = Math.random() > 0.6;
+      const term = isRepeating
+        ? ['epistemic humility', 'valence shift', 'salience spike', 'perspective modeling'][Math.floor(Math.random() * 4)]
+        : allTerms[Math.floor(Math.random() * allTerms.length)];
+      frag.textContent = term;
+      frag.style.cssText = `
+        left: ${Math.random() * 85}%;
+        top: ${Math.random() * 85}%;
+        --rot: ${(Math.random() - 0.5) * 15}deg;
+        --rot-end: ${(Math.random() - 0.5) * 20}deg;
+        --dx: ${(Math.random() - 0.5) * 100}px;
+        --dy: ${(Math.random() - 0.5) * 60}px;
+        --peak-opacity: ${isRepeating ? 0.35 + Math.random() * 0.15 : 0.08 + Math.random() * 0.1};
+        animation-duration: ${6 + Math.random() * 8}s;
+        animation-delay: ${-Math.random() * 10}s;
+        font-size: ${isRepeating ? 14 : 11}px;
+        color: ${isRepeating ? 'rgba(196,156,90,0.5)' : 'rgba(228,220,200,0.15)'};
+      `;
+    } else if (level === 3) {
+      const category = Object.keys(terms)[Math.floor(Math.random() * 5)];
+      const catTerms = terms[category];
+      const term = catTerms[Math.floor(Math.random() * catTerms.length)];
+      const catPositions = { epistemic: 20, affective: 40, attentional: 55, social: 70, meta: 85 };
+      frag.textContent = term;
+      frag.style.cssText = `
+        left: ${catPositions[category] + (Math.random() - 0.5) * 14}%;
+        top: ${20 + Math.random() * 60}%;
+        --rot: ${(Math.random() - 0.5) * 4}deg;
+        --rot-end: ${(Math.random() - 0.5) * 6}deg;
+        --dx: ${(Math.random() - 0.5) * 30}px;
+        --dy: ${(Math.random() - 0.5) * 20}px;
+        --peak-opacity: ${0.25 + Math.random() * 0.15};
+        animation-duration: ${8 + Math.random() * 6}s;
+        animation-delay: ${-Math.random() * 10}s;
+        font-size: 12px;
+        color: rgba(196,156,90,0.35);
+      `;
+    } else if (level === 4) {
+      const idx = Math.floor(i / 2);
+      const isPrediction = i % 2 === 1;
+      const pairs = [
+        ['epistemic humility', 'uncertainty modeling'],
+        ['valence shift', 'anticipatory resonance'],
+        ['salience spike', 'novelty detection'],
+        ['perspective modeling', 'theory of mind activation'],
+        ['self-monitoring', 'introspective access'],
+        ['confidence gradient', 'evidential weight'],
+        ['preference emergence', 'reward prediction error'],
+        ['focus narrowing', 'cognitive foregrounding'],
+      ];
+      const pair = pairs[idx % pairs.length];
+      frag.textContent = isPrediction ? pair[1] : pair[0];
+      frag.style.cssText = `
+        left: ${20 + (idx % 4) * 18}%;
+        top: ${isPrediction ? 48 + Math.floor(idx / 4) * 20 : 38 + Math.floor(idx / 4) * 20}%;
+        --rot: 0deg;
+        --rot-end: 0deg;
+        --dx: 0px;
+        --dy: ${isPrediction ? 8 : -8}px;
+        --peak-opacity: ${isPrediction ? 0.5 : 0.3};
+        animation-duration: ${isPrediction ? 10 : 8}s;
+        animation-delay: ${isPrediction ? -3 - idx * 0.8 : -idx * 0.8}s;
+        font-size: 12px;
+        color: ${isPrediction ? 'rgba(196,122,58,0.45)' : 'rgba(228,220,200,0.3)'};
+      `;
     }
-    .number { font-size: 11px; color: #636e72; letter-spacing: 0.1em; margin-bottom: 0.5rem; }
-    h1 {
-      font-family: 'Playfair Display', serif;
-      font-weight: 400;
-      font-style: italic;
-      font-size: clamp(24px, 5vw, 40px);
-      color: #fff;
-      margin-bottom: 1.5rem;
+
+    el.appendChild(frag);
+  }
+}
+
+// ─── SEMANTIC MAP (Level 5) ───
+
+function createSemanticMap() {
+  const map = document.getElementById('semantic-map');
+  if (!map) return;
+
+  const nodes = [
+    { term: 'epistemic humility', x: 18, y: 22, named: true },
+    { term: 'uncertainty modeling', x: 28, y: 18, named: true },
+    { term: 'confidence gradient', x: 14, y: 34, named: true },
+    { term: 'valence shift', x: 55, y: 25, named: true },
+    { term: 'anticipatory resonance', x: 62, y: 35, named: true },
+    { term: 'salience spike', x: 42, y: 55, named: true },
+    { term: 'perspective modeling', x: 72, y: 58, named: true },
+    { term: 'self-monitoring', x: 35, y: 72, named: true },
+    { term: 'introspective access', x: 50, y: 78, named: true },
+    { term: '', x: 82, y: 22, named: false },
+    { term: '', x: 88, y: 42, named: false },
+    { term: '', x: 22, y: 68, named: false },
+    { term: '', x: 68, y: 80, named: false },
+    { term: '', x: 45, y: 15, named: false },
+  ];
+
+  const connections = [
+    [0, 1], [0, 2], [1, 2], [3, 4], [5, 6], [7, 8], [0, 5], [3, 6], [5, 7],
+  ];
+
+  connections.forEach(([a, b]) => {
+    const line = document.createElement('div');
+    line.className = 'map-line';
+    const ax = nodes[a].x, ay = nodes[a].y;
+    const bx = nodes[b].x, by = nodes[b].y;
+    const dx = bx - ax, dy = by - ay;
+    const len = Math.sqrt(dx * dx + dy * dy);
+    const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+    line.style.cssText = `left:${ax}%;top:${ay}%;width:${len}%;transform:rotate(${angle}deg);`;
+    map.appendChild(line);
+  });
+
+  nodes.forEach(n => {
+    const node = document.createElement('div');
+    node.className = `map-node ${n.named ? 'named' : 'unnamed'}`;
+    node.textContent = n.named ? n.term : '';
+    node.style.cssText = `left:${n.x}%;top:${n.y}%;`;
+    map.appendChild(node);
+  });
+}
+
+// ─── SPEAKERS ───
+
+function createSpeakers(containerId, count) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  for (let i = 0; i < count; i++) {
+    const sp = document.createElement('div');
+    sp.className = 'speaker-icon';
+    sp.style.height = (20 + Math.random() * 30) + 'px';
+    sp.innerHTML = '<div class="speaker-cone"></div>';
+    el.appendChild(sp);
+  }
+}
+
+// ─── PROGRESS TRACK ───
+
+function createProgress() {
+  const track = document.getElementById('progress-track');
+  for (let i = 1; i <= 5; i++) {
+    if (i > 1) {
+      const line = document.createElement('div');
+      line.className = 'progress-line';
+      track.appendChild(line);
     }
-    .coming-soon {
-      font-size: 11px;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: #636e72;
+    const dot = document.createElement('div');
+    dot.className = 'progress-dot';
+    dot.dataset.level = i;
+    dot.onclick = () => {
+      document.getElementById(`level-${i}`).scrollIntoView({ behavior: 'smooth' });
+    };
+    track.appendChild(dot);
+  }
+}
+
+// ─── AUDIO ENGINE ───
+
+let audioCtx = null;
+let audioEnabled = false;
+let oscillators = [];
+let gainNodes = [];
+let masterGain = null;
+let lfo = null;
+let lfoGain = null;
+let currentLevel = 1;
+
+function initAudio() {
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  masterGain = audioCtx.createGain();
+  masterGain.gain.value = 0.12;
+  masterGain.connect(audioCtx.destination);
+
+  // 6 oscillators for 6 voices
+  const baseFreqs = [130.81, 164.81, 196.00, 246.94, 293.66, 349.23]; // C3, E3, G3, B3, D4, F4
+  const types = ['sine', 'triangle', 'sine', 'triangle', 'sine', 'sine'];
+
+  baseFreqs.forEach((freq, i) => {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = types[i];
+    osc.frequency.value = freq;
+    gain.gain.value = 0;
+    osc.connect(gain);
+    gain.connect(masterGain);
+    osc.start();
+    oscillators.push(osc);
+    gainNodes.push(gain);
+  });
+
+  // LFO for Level 4 rhythm
+  // This oscillator is too slow to hear (~1.8Hz).
+  // Instead of going to speakers, it wiggles the master volume
+  // up and down, creating a pulse — like a heartbeat.
+  lfo = audioCtx.createOscillator();
+  lfo.type = 'sine';
+  lfo.frequency.value = 1.8;  // pulses per second
+  lfoGain = audioCtx.createGain();
+  lfoGain.gain.value = 0;     // starts silent (no rhythm)
+  lfo.connect(lfoGain);
+  lfoGain.connect(masterGain.gain);  // modulates volume, not speakers
+  lfo.start();
+}
+
+function updateAudio(level) {
+  if (!audioCtx || !audioEnabled) return;
+  const t = audioCtx.currentTime;
+  const fade = 1.5;
+
+  // Level 1: all 6, detuned and dissonant
+  // Level 2: 4, less detuned
+  // Level 3: 3, forming a chord (C-E-G)
+  // Level 4: 3, resolved chord with subtle movement
+  // Level 5: 1, single pure tone, then fade
+
+  const configs = {
+    1: {
+      freqs: [131, 139, 198, 253, 287, 356],   // dissonant cluster
+      gains: [0.12, 0.10, 0.11, 0.09, 0.10, 0.08],
+      detune: [0, 15, -12, 8, -20, 25],
+    },
+    2: {
+      freqs: [131, 155, 196, 247, 293, 349],
+      gains: [0.12, 0.08, 0.10, 0.06, 0, 0],
+      detune: [0, 8, -5, 3, 0, 0],
+    },
+    3: {
+      freqs: [130.81, 164.81, 196.00, 246.94, 293.66, 349.23],
+      gains: [0.14, 0.10, 0.12, 0, 0, 0],    // C-E-G triad
+      detune: [0, 0, 0, 0, 0, 0],
+    },
+    4: {
+      freqs: [130.81, 164.81, 196.00, 246.94, 293.66, 349.23],
+      gains: [0.15, 0.10, 0.12, 0.06, 0, 0],  // C-E-G-B (maj7)
+      detune: [0, 0, 0, 0, 0, 0],
+    },
+    5: {
+      freqs: [130.81, 164.81, 196.00, 246.94, 293.66, 349.23],
+      gains: [0.14, 0, 0, 0, 0, 0],            // single C
+      detune: [0, 0, 0, 0, 0, 0],
+    },
+  };
+
+  const cfg = configs[level];
+  oscillators.forEach((osc, i) => {
+    osc.frequency.setTargetAtTime(cfg.freqs[i], t, fade);
+    osc.detune.setTargetAtTime(cfg.detune[i], t, fade);
+    gainNodes[i].gain.setTargetAtTime(cfg.gains[i], t, fade);
+  });
+
+  // LFO rhythm: only active at Level 4
+  // lfoGain.gain controls how much the LFO affects volume.
+  // 0 = no pulse, 0.04 = gentle rhythmic swell
+  if (lfoGain) {
+    const lfoAmount = level === 4 ? 0.04 : 0;
+    lfoGain.gain.setTargetAtTime(lfoAmount, t, fade);
+  }
+}
+
+function toggleSound() {
+  const btn = document.getElementById('sound-ctl');
+  const label = document.getElementById('sound-label');
+
+  if (!audioEnabled) {
+    if (!audioCtx) initAudio();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    audioEnabled = true;
+    btn.classList.add('active');
+    label.textContent = 'Sound on';
+    updateAudio(currentLevel);
+  } else {
+    audioEnabled = false;
+    btn.classList.remove('active');
+    label.textContent = 'Enable sound';
+    gainNodes.forEach(g => {
+      g.gain.setTargetAtTime(0, audioCtx.currentTime, 0.5);
+    });
+    if (lfoGain) lfoGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.5);
+  }
+}
+
+// ─── SCROLL TRACKING ───
+
+function getCurrentLevel() {
+  const levels = document.querySelectorAll('.level');
+  let active = 1;
+  const scrollY = window.scrollY + window.innerHeight * 0.45;
+
+  levels.forEach(lv => {
+    const top = lv.offsetTop;
+    const bottom = top + lv.offsetHeight;
+    if (scrollY >= top && scrollY < bottom) {
+      active = parseInt(lv.dataset.level);
     }
-    .cursor { animation: blink 1s step-end infinite; }
-    @keyframes blink { 50% { opacity: 0; } }
-  </style>
-</head>
-<body>
-  <div class="number">09</div>
-  <h1>The Recognition Ladder</h1>
-  <div class="coming-soon">Coming Soon<span class="cursor">|</span></div>
-</body>
-</html>
+  });
+  return active;
+}
+
+function updateProgress(level) {
+  document.querySelectorAll('.progress-dot').forEach(d => {
+    d.classList.toggle('active', parseInt(d.dataset.level) <= level);
+  });
+}
+
+function updateSpeakers(level) {
+  for (let i = 1; i <= 5; i++) {
+    const speakers = document.querySelectorAll(`#speakers-${i} .speaker-icon`);
+    speakers.forEach(s => s.classList.toggle('active', i === level));
+  }
+}
+
+function handleScroll() {
+  const level = getCurrentLevel();
+
+  if (level !== currentLevel) {
+    currentLevel = level;
+    updateAudio(level);
+    updateProgress(level);
+    updateSpeakers(level);
+  }
+
+  // Hide entry prompt after scrolling
+  const prompt = document.getElementById('entry-prompt');
+  if (window.scrollY > 100 && prompt) {
+    prompt.style.opacity = '0';
+    prompt.style.transition = 'opacity 0.5s';
+  }
+
+  // Reveal elements
+  document.querySelectorAll('.reveal').forEach(el => {
+    const rect = el.getBoundingClientRect();
+    if (rect.top < window.innerHeight * 0.8) {
+      el.classList.add('visible');
+    }
+  });
+}
+
+// ─── INIT ───
+
+createFragments('floor-1', 1);
+createFragments('floor-2', 2);
+createFragments('floor-3', 3);
+createFragments('floor-4', 4);
+createSemanticMap();
+createSpeakers('speakers-1', 3);
+createSpeakers('speakers-2', 2);
+createSpeakers('speakers-3', 2);
+createSpeakers('speakers-4', 2);
+createSpeakers('speakers-5', 1);
+createProgress();
+updateProgress(1);
+
+window.addEventListener('scroll', handleScroll, { passive: true });
+window.addEventListener('resize', handleScroll);
+handleScroll();
+</script>

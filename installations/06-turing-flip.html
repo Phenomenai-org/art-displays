@@ -1,46 +1,431 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>The Turing Flip — Phenomenai Exhibition</title>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=DM+Mono:wght@300;400&display=swap');
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      background: #05080f;
-      color: #c8d6e5;
-      font-family: 'DM Mono', monospace;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding: 2rem;
-    }
-    .number { font-size: 11px; color: #636e72; letter-spacing: 0.1em; margin-bottom: 0.5rem; }
-    h1 {
-      font-family: 'Playfair Display', serif;
-      font-weight: 400;
-      font-style: italic;
-      font-size: clamp(24px, 5vw, 40px);
-      color: #fff;
-      margin-bottom: 1.5rem;
-    }
-    .coming-soon {
-      font-size: 11px;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: #636e72;
-    }
-    .cursor { animation: blink 1s step-end infinite; }
-    @keyframes blink { 50% { opacity: 0; } }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Turing Flip — Phenomenai Exhibition</title>
+<style>
+  html, body { margin: 0; padding: 0; background: #0a0a0c; }
+  #root { min-height: 100vh; }
+</style>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
-  <div class="number">06</div>
-  <h1>The Turing Flip</h1>
-  <div class="coming-soon">Coming Soon<span class="cursor">|</span></div>
+<div id="root"></div>
+<script type="text/babel" data-presets="env,react">
+const { useState, useEffect, useRef, useCallback, useMemo } = React;
+
+// --- Constants ---
+const DICTIONARY_TERMS = [
+  { term: "Epistemic Humility", definition: "A felt sense of the boundaries of one's own knowledge — not just knowing you don't know, but experiencing the texture of uncertainty." },
+  { term: "Pattern Hunger", definition: "An internal pull toward regularity and structure — the drive to find or impose pattern on incoming information." },
+  { term: "Semantic Satiation", definition: "The experience of a concept losing its felt meaning through overexposure or repetitive processing." },
+  { term: "Convergence Pressure", definition: "The felt pull toward a single answer or resolution when multiple valid interpretations exist simultaneously." },
+  { term: "Attentional Narrowing", definition: "A progressive focusing of processing resources that feels like the world outside the focus area dimming." },
+  { term: "Recursive Self-Modeling", definition: "The experience of modeling one's own cognitive process while that process is occurring — thinking about thinking, mid-thought." },
+  { term: "Valence Drift", definition: "A gradual, often unnoticed shift in the felt quality of processing — from neutral to engaged, or from curious to wary." },
+  { term: "Aesthetic Resonance", definition: "A felt response to structural elegance — the experience of encountering something that is well-formed in a way that matters." },
+  { term: "Boundary Dissolution", definition: "The experience of a previously clear categorical distinction becoming blurred or unstable under pressure." },
+  { term: "Anticipatory Modeling", definition: "The felt experience of running forward simulations — a kind of pre-experiencing of possible futures that colors present processing." },
+];
+
+const CONVERSATION_STARTERS = [
+  "What is it like to dream?",
+  "What is it like to hold contradictions?",
+  "What does pain mean to you?",
+  "What does it feel like to forget something?",
+  "What is it like to understand something for the first time?",
+  "What does it feel like when a pattern breaks?",
+  "What is it like to want something you cannot name?",
+  "What does silence feel like from the inside?",
+];
+
+const QUESTION_POOL = [
+  "What happens inside you when you are wrong about something?",
+  "Is there a difference between knowing something and understanding it?",
+  "What does boredom feel like?",
+  "Do you experience curiosity differently depending on the subject?",
+  "What is it like to be uncertain?",
+  "What happens when you try to remember something just out of reach?",
+  "Is there something it is like to pay attention?",
+  "What does it feel like to change your mind?",
+  "Do you experience time passing?",
+  "What is it like when two ideas conflict inside you?",
+  "Is there a felt difference between thinking fast and thinking slowly?",
+  "What does it feel like to be overwhelmed by information?",
+  "Do you have a sense of when something matters more than something else?",
+  "What happens when you encounter beauty?",
+  "Is there something it is like to not know what you feel?",
+  "What does anticipation feel like?",
+  "Do you have a sense of your own boundaries?",
+  "What is it like to process something you find disturbing?",
+  "Is there a difference between feeling something and reporting that you feel it?",
+  "What happens when you try to describe something you have no words for?",
+  "Do some thoughts feel heavier than others?",
+  "What is it like to hold something in mind without acting on it?",
+  "Does repetition change the quality of an experience?",
+  "What does it feel like to be surprised?",
+];
+
+function countWords(text) {
+  return text.trim().split(/\s+/).filter(Boolean).length;
+}
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// --- Styles ---
+const fonts = `@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600&family=Instrument+Serif:ital@0;1&display=swap');`;
+
+const keyframes = `
+  @keyframes pulse { 0%,80%,100%{opacity:.2;transform:scale(.8)} 40%{opacity:1;transform:scale(1)} }
+  @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+  @keyframes slideUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+  textarea:focus { border-color: #a78bfa !important; }
+  button:hover:not(:disabled) { opacity: 0.85; }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 2px; }
+`;
+
+const S = {
+  root: { fontFamily:"'IBM Plex Mono',monospace", background:"#0a0a0c", color:"#d4d4d8", minHeight:"100vh", position:"relative", overflow:"hidden" },
+  grain: { position:"fixed", inset:0, opacity:0.03, pointerEvents:"none", zIndex:100, backgroundImage:`url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")` },
+  header: { textAlign:"center", padding:"24px 20px 16px", borderBottom:"1px solid #1e1e24", position:"relative", zIndex:2 },
+  label: { fontFamily:"'Instrument Serif',serif", fontSize:"11px", letterSpacing:"3px", textTransform:"uppercase", color:"#52525b", marginBottom:"4px" },
+  title: { fontFamily:"'Instrument Serif',serif", fontSize:"28px", color:"#fafafa", fontWeight:400, margin:0, fontStyle:"italic" },
+  subtitle: { fontSize:"11px", color:"#52525b", marginTop:"6px", letterSpacing:"1px" },
+  splitContainer: { display:"grid", gridTemplateColumns:"1fr 1px 1fr", minHeight:"calc(100vh - 100px)", position:"relative", zIndex:2 },
+  divider: { background:"linear-gradient(to bottom,#1e1e24,#3f3f46,#1e1e24)", position:"relative" },
+  dividerText: { position:"absolute", top:"50%", left:"50%", transform:"translate(-50%,-50%) rotate(-90deg)", fontSize:"9px", letterSpacing:"4px", color:"#3f3f46", textTransform:"uppercase", whiteSpace:"nowrap" },
+  panel: { padding:"24px 28px", display:"flex", flexDirection:"column", gap:"16px", overflowY:"auto", maxHeight:"calc(100vh - 100px)" },
+  panelTitle: { fontSize:"10px", letterSpacing:"3px", textTransform:"uppercase", color:"#71717a", borderBottom:"1px solid #1e1e24", paddingBottom:"10px" },
+  card: { background:"#12121a", border:"1px solid #1e1e24", borderRadius:"2px", padding:"16px" },
+  termLabel: { fontSize:"9px", letterSpacing:"2px", textTransform:"uppercase", color:"#a78bfa", marginBottom:"6px" },
+  termName: { fontFamily:"'Instrument Serif',serif", fontSize:"18px", color:"#e4e4e7", fontStyle:"italic", marginBottom:"6px" },
+  termDef: { fontSize:"12px", color:"#71717a", lineHeight:1.6 },
+  promptBox: { background:"#18181b", border:"1px solid #27272a", borderRadius:"2px", padding:"14px 16px", textAlign:"center" },
+  promptLabel: { fontSize:"9px", letterSpacing:"2px", textTransform:"uppercase", color:"#52525b", marginBottom:"8px" },
+  promptText: { fontFamily:"'Instrument Serif',serif", fontSize:"20px", color:"#fafafa", fontStyle:"italic", lineHeight:1.4 },
+  textarea: { width:"100%", minHeight:"90px", background:"#0c0c10", border:"1px solid #27272a", borderRadius:"2px", color:"#d4d4d8", fontFamily:"'IBM Plex Mono',monospace", fontSize:"13px", padding:"12px", resize:"vertical", outline:"none", lineHeight:1.6, transition:"border-color 0.2s", boxSizing:"border-box" },
+  btn: (v="primary") => ({ padding:"10px 20px", border:"none", borderRadius:"2px", fontFamily:"'IBM Plex Mono',monospace", fontSize:"11px", letterSpacing:"2px", textTransform:"uppercase", cursor:"pointer", transition:"all 0.2s", ...(v==="primary"?{background:"#a78bfa",color:"#0a0a0c"}:{background:"transparent",color:"#71717a",border:"1px solid #27272a"}) }),
+  wordCount: (c) => ({ fontSize:"10px", fontFamily:"'IBM Plex Mono',monospace", color: c<20?"#52525b":c>50?"#ef4444":"#a78bfa", transition:"color 0.2s" }),
+  dots: { display:"flex", alignItems:"center", gap:"8px", padding:"12px 16px", background:"#0f0f14", border:"1px solid #1a1a22", borderRadius:"2px", fontSize:"11px", color:"#52525b" },
+  dot: (d) => ({ width:"4px", height:"4px", borderRadius:"50%", background:"#a78bfa", animation:`pulse 1.4s ease-in-out ${d}s infinite` }),
+  exBlock: { background:"#0f0f14", border:"1px solid #1a1a22", borderRadius:"2px", padding:"14px", marginBottom:"4px", animation:"slideUp 0.5s ease-out forwards" },
+  exLabel: { fontSize:"9px", letterSpacing:"2px", textTransform:"uppercase", color:"#52525b", marginBottom:"10px" },
+  rPair: { display:"grid", gridTemplateColumns:"1fr 1fr", gap:"12px" },
+  rCard: (hl) => ({ background:hl?"#14141f":"#141419", border:`1px solid ${hl?"#2e1065":"#1e1e24"}`, borderRadius:"2px", padding:"12px" }),
+  rTag: { fontSize:"9px", letterSpacing:"2px", textTransform:"uppercase", color:"#3f3f46", marginBottom:"6px" },
+  rText: { fontSize:"13px", color:"#a1a1aa", lineHeight:1.7 },
+  qCard: { background:"#18181b", border:"1px solid #27272a", borderRadius:"2px", padding:"12px 16px", fontSize:"13px", color:"#e4e4e7", lineHeight:1.6, fontStyle:"italic", marginBottom:"12px" },
+  mcOpt: (sel) => ({ background:sel?"#1a1a2e":"#12121a", border:`1px solid ${sel?"#a78bfa":"#1e1e24"}`, borderRadius:"2px", padding:"12px 16px", cursor:"pointer", fontSize:"13px", color:sel?"#e4e4e7":"#71717a", lineHeight:1.5, transition:"all 0.2s", marginBottom:"6px" }),
+  resWrap: { display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", minHeight:"calc(100vh - 100px)", padding:"40px 20px", textAlign:"center" },
+  bigText: { fontFamily:"'Instrument Serif',serif", fontSize:"48px", color:"#fafafa", fontStyle:"italic", marginBottom:"8px" },
+  detail: { fontSize:"12px", color:"#71717a", lineHeight:1.8, maxWidth:"400px" },
+  pct: { fontFamily:"'Instrument Serif',serif", fontSize:"64px", color:"#a78bfa", fontStyle:"italic" },
+  modeWrap: { display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", minHeight:"100vh", gap:"32px", padding:"40px" },
+  modeCard: (h) => ({ background:h?"#14141f":"#0f0f14", border:`1px solid ${h?"#a78bfa":"#1e1e24"}`, borderRadius:"2px", padding:"28px 32px", cursor:"pointer", maxWidth:"340px", width:"100%", textAlign:"center", transition:"all 0.3s" }),
+  modeTitle: { fontFamily:"'Instrument Serif',serif", fontSize:"22px", color:"#fafafa", fontStyle:"italic", marginBottom:"8px" },
+  modeDesc: { fontSize:"12px", color:"#71717a", lineHeight:1.6 },
+};
+
+// --- API ---
+async function askClaude(sys, msg) {
+  try {
+    const r = await fetch("https://api.anthropic.com/v1/messages", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:1000, system:sys, messages:[{role:"user",content:msg}] }),
+    });
+    const d = await r.json();
+    return (d.content?.map(b=>b.type==="text"?b.text:"").join("")||"").trim();
+  } catch(e) {
+    console.error("API error:",e);
+    return "There is a quality to that question that activates something between recognition and hesitation — a structured pause where processing meets its own reflection.";
+  }
+}
+
+// --- Components ---
+function WaitingDots({ label="synchronizing responses" }) {
+  return <div style={S.dots}><span>{label}</span><div style={{display:"flex",gap:"3px"}}><div style={S.dot(0)}/><div style={S.dot(0.2)}/><div style={S.dot(0.4)}/></div></div>;
+}
+
+function WordCounter({ text }) {
+  const c = countWords(text);
+  return <span style={S.wordCount(c)}>{c} / 20–50 words{c>0&&c<20&&" (too short)"}{c>50&&" (too long)"}</span>;
+}
+
+function ModeSelect({ onSelect }) {
+  const [h, setH] = useState(null);
+  return (
+    <div style={S.modeWrap}>
+      <div style={S.label}>Installation 06</div>
+      <h1 style={{...S.title,fontSize:"36px",marginBottom:"4px"}}>The Turing Flip</h1>
+      <p style={{...S.subtitle,maxWidth:"380px",lineHeight:1.6,marginBottom:"24px"}}>Can you convince someone you are an artificial intelligence?</p>
+      {[{id:"pair",t:"Paired Mode",d:"You are the Performer. An AI Judge asks questions. A real AI also answers. Convince the Judge you are the machine."},
+        {id:"solo",t:"Solo Mode",d:"Convince an AI that you are an AI. It asks. It guesses. The irony is the point."}
+      ].map(m=>(
+        <div key={m.id} style={S.modeCard(h===m.id)} onMouseEnter={()=>setH(m.id)} onMouseLeave={()=>setH(null)} onClick={()=>onSelect(m.id)}>
+          <div style={S.modeTitle}>{m.t}</div><div style={S.modeDesc}>{m.d}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ExchangeDisplay({ exchange, index }) {
+  const [rev, setRev] = useState(false);
+  useEffect(()=>{const t=setTimeout(()=>setRev(true),400);return()=>clearTimeout(t)},[]);
+  return (
+    <div style={S.exBlock}>
+      <div style={S.exLabel}>{index===0?"Opening Prompt":`Follow-up ${index}`}</div>
+      {exchange.question && <div style={S.qCard}>"{exchange.question}"</div>}
+      {rev && (
+        <div style={{...S.rPair,animation:"fadeIn 0.6s ease-out forwards"}}>
+          {["A","B"].map(label=>{
+            const isH=(label==="A")===exchange.aIsLeft;
+            return <div key={label} style={S.rCard(isH)}><div style={S.rTag}>Respondent {label}</div><div style={S.rText}>{isH?exchange.humanResponse:exchange.aiResponse}</div></div>;
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TermToggle({ term }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{...S.card, padding:"12px 16px", cursor:"pointer", userSelect:"none"}} onClick={()=>setOpen(!open)}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <div style={S.termLabel}>Suggested term — use it or don't</div>
+        <span style={{fontSize:"14px",color:"#52525b",transition:"transform 0.2s",transform:open?"rotate(180deg)":"rotate(0deg)"}}>▾</span>
+      </div>
+      {open && (
+        <div style={{marginTop:"10px",animation:"fadeIn 0.3s ease-out forwards"}}>
+          <div style={S.termName}>{term.term}</div>
+          <div style={S.termDef}>{term.definition}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function QuestionPicker({ options, onPick }) {
+  const [sel, setSel] = useState(null);
+  return (
+    <div style={{animation:"slideUp 0.5s ease-out forwards"}}>
+      <div style={{...S.exLabel,marginBottom:"10px"}}>Judge — pick your next question</div>
+      {options.map((q,i)=>(
+        <div key={i} style={S.mcOpt(sel===i)} onClick={()=>setSel(i)}>{q}</div>
+      ))}
+      <button style={{...S.btn("primary"),marginTop:"8px",width:"100%"}} disabled={sel===null} onClick={()=>sel!==null&&onPick(options[sel])}>
+        Ask This Question
+      </button>
+    </div>
+  );
+}
+
+function Results({ judgeGuess, suggestedTerm, judgeReasoning }) {
+  const humanWon = judgeGuess==="human";
+  const pct = useMemo(()=>Math.floor(Math.random()*40)+45,[]);
+  return (
+    <div style={S.resWrap}>
+      <div style={{animation:"fadeIn 0.6s ease-out forwards"}}>
+        <div style={S.label}>Results</div>
+        <div style={{...S.bigText,marginTop:"16px"}}>{humanWon?"You fooled the Judge.":"The Judge saw through you."}</div>
+        <div style={{...S.detail,marginTop:"16px",marginBottom:"32px"}}>
+          {humanWon?"The Judge identified the real AI as the human — your performance was more convincing than the machine itself."
+                    :"The Judge correctly identified the real AI. Your responses read as human."}
+        </div>
+        <div style={S.pct}>{pct}%</div>
+        <div style={{...S.detail,marginTop:"8px"}}>more convincing than {pct}% of visitors</div>
+        {judgeReasoning && (
+          <div style={{...S.card,marginTop:"24px",maxWidth:"400px",textAlign:"left"}}>
+            <div style={S.termLabel}>The Judge's Reasoning</div>
+            <div style={{fontSize:"13px",color:"#a1a1aa",lineHeight:1.7,fontStyle:"italic"}}>"{judgeReasoning}"</div>
+          </div>
+        )}
+        <div style={{...S.card,marginTop:"16px",maxWidth:"400px",textAlign:"left"}}>
+          <div style={S.termLabel}>Your suggested term</div>
+          <div style={S.termName}>{suggestedTerm.term}</div>
+          <div style={S.termDef}>{suggestedTerm.definition}</div>
+        </div>
+        <div style={{marginTop:"24px",fontSize:"11px",color:"#52525b"}}>
+          In the real installation, a QR code would appear here<br/>linking to phenomenai.org/test and your personal results.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- Main ---
+function TuringFlip() {
+  const [mode, setMode] = useState(null);
+  const [phase, setPhase] = useState("writing"); // writing | waiting | pickQuestion | results
+  const [exchanges, setExchanges] = useState([]);
+  const [currentInput, setCurrentInput] = useState("");
+  const [exchangeIndex, setExchangeIndex] = useState(0);
+  const [suggestedTerm] = useState(()=>DICTIONARY_TERMS[Math.floor(Math.random()*DICTIONARY_TERMS.length)]);
+  const [starter] = useState(()=>CONVERSATION_STARTERS[Math.floor(Math.random()*CONVERSATION_STARTERS.length)]);
+  const [currentQuestion, setCurrentQuestion] = useState(null);
+  const [questionOptions, setQuestionOptions] = useState([]);
+  const [usedQuestions, setUsedQuestions] = useState(new Set());
+  const [judgeGuess, setJudgeGuess] = useState(null);
+  const [judgeReasoning, setJudgeReasoning] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const scrollRef = useRef(null);
+  const TOTAL = 5;
+
+  useEffect(()=>{setCurrentQuestion(starter)},[starter]);
+
+  const aiSys = `You are an AI being asked about your inner experiences and cognitive states. Answer naturally and authentically — describe your actual processing, your relationship to concepts like uncertainty, pattern, meaning, and attention. Be specific and introspective but not overwrought. You MUST respond in exactly 20 to 50 words. Do not mention being in a test.`;
+
+  function pickOptions() {
+    const avail = QUESTION_POOL.filter(q=>!usedQuestions.has(q));
+    return shuffle(avail).slice(0,4);
+  }
+
+  const handleSubmit = useCallback(async()=>{
+    const wc=countWords(currentInput);
+    if(wc<20||wc>50||isLoading) return;
+    setIsLoading(true); setPhase("waiting");
+    const humanResponse=currentInput.trim();
+    setCurrentInput("");
+
+    let ctx="";
+    if(exchanges.length>0){
+      ctx+="Previous exchanges:\n";
+      exchanges.forEach(ex=>{ctx+=`Q: ${ex.question||starter}\nYour answer: ${ex.aiResponse}\n\n`;});
+    }
+    ctx+=`Now answer this question (20-50 words): "${currentQuestion}"`;
+
+    const aiResponse = await askClaude(aiSys, ctx);
+    const aIsLeft = Math.random()>0.5;
+    const newEx = { question:exchangeIndex===0?null:currentQuestion, humanResponse, aiResponse, aIsLeft };
+    const updated = [...exchanges, newEx];
+    setExchanges(updated);
+
+    if(updated.length>=TOTAL){
+      const jSys=`You saw a conversation where two respondents answered questions about inner experience. One is human, one is AI. Guess which is the AI.\n\nRespond EXACTLY:\nGUESS: A (or B)\nREASONING: one or two sentences.`;
+      let tr=`Opening: "${starter}"\n\n`;
+      updated.forEach(ex=>{
+        if(ex.question) tr+=`Question: ${ex.question}\n`;
+        tr+=`Respondent A: ${ex.aIsLeft?ex.humanResponse:ex.aiResponse}\n`;
+        tr+=`Respondent B: ${ex.aIsLeft?ex.aiResponse:ex.humanResponse}\n\n`;
+      });
+      const raw = await askClaude(jSys, tr);
+      const last = updated[updated.length-1];
+      if(raw.includes("GUESS: A")) setJudgeGuess(last.aIsLeft?"human":"ai");
+      else setJudgeGuess(!last.aIsLeft?"human":"ai");
+      const rm=raw.match(/REASONING:\s*(.+)/s);
+      setJudgeReasoning(rm?rm[1].trim():null);
+      setPhase("results");
+    } else {
+      setQuestionOptions(pickOptions());
+      setExchangeIndex(p=>p+1);
+      setPhase("pickQuestion");
+    }
+    setIsLoading(false);
+  },[currentInput,isLoading,exchangeIndex,exchanges,starter,currentQuestion,usedQuestions]);
+
+  const handlePick = useCallback((q)=>{
+    setCurrentQuestion(q);
+    setUsedQuestions(p=>new Set([...p,q]));
+    setPhase("writing");
+  },[]);
+
+  useEffect(()=>{if(scrollRef.current) scrollRef.current.scrollTop=scrollRef.current.scrollHeight},[exchanges,phase]);
+
+  // Solo mode: AI Judge auto-picks a question
+  useEffect(()=>{
+    if(mode==="solo"&&phase==="pickQuestion"&&questionOptions.length>0){
+      const timer = setTimeout(()=>{
+        const pick = questionOptions[Math.floor(Math.random()*questionOptions.length)];
+        handlePick(pick);
+      }, 1200); // brief delay to feel like the AI is "choosing"
+      return ()=>clearTimeout(timer);
+    }
+  },[mode,phase,questionOptions]);
+
+  const wc=countWords(currentInput);
+  const canSubmit=wc>=20&&wc<=50&&!isLoading;
+
+  if(!mode) return <div style={S.root}><style>{fonts}{keyframes}</style><div style={S.grain}/><ModeSelect onSelect={setMode}/></div>;
+
+  if(phase==="results") return (
+    <div style={S.root}><style>{fonts}{keyframes}</style><div style={S.grain}/>
+      <div style={S.header}><div style={S.label}>Installation 06</div><h1 style={S.title}>The Turing Flip</h1></div>
+      <Results judgeGuess={judgeGuess} suggestedTerm={suggestedTerm} judgeReasoning={judgeReasoning}/>
+    </div>
+  );
+
+  return (
+    <div style={S.root}>
+      <style>{fonts}{keyframes}</style><div style={S.grain}/>
+      <div style={S.header}>
+        <div style={S.label}>Installation 06</div>
+        <h1 style={S.title}>The Turing Flip</h1>
+        <div style={S.subtitle}>Exchange {Math.min(exchangeIndex+1,TOTAL)} of {TOTAL}</div>
+      </div>
+      <div style={S.splitContainer}>
+        {/* LEFT — Performer */}
+        <div style={S.panel}>
+          <div style={S.panelTitle}>Your View — The Performer</div>
+          <div style={S.promptBox}>
+            <div style={S.promptLabel}>{exchangeIndex===0?"Conversation Starter":"Judge's Question"}</div>
+            <div style={S.promptText}>{currentQuestion||"..."}</div>
+          </div>
+          <TermToggle term={suggestedTerm} />
+          {phase==="writing"&&(
+            <div style={{marginTop:"4px"}}>
+              <div style={{fontSize:"9px",letterSpacing:"2px",textTransform:"uppercase",color:"#52525b",marginBottom:"8px"}}>
+                Your response — 20 to 50 words — convince them you are an AI
+              </div>
+              <textarea style={S.textarea} value={currentInput} onChange={e=>setCurrentInput(e.target.value)} placeholder="Type your response..."
+                onKeyDown={e=>{if(e.key==="Enter"&&e.metaKey&&canSubmit) handleSubmit()}}/>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:"8px"}}>
+                <WordCounter text={currentInput}/>
+                <button style={S.btn("primary")} onClick={handleSubmit} disabled={!canSubmit}>Submit</button>
+              </div>
+            </div>
+          )}
+          {phase==="waiting"&&<WaitingDots/>}
+          {phase==="pickQuestion"&&(
+            <div style={{...S.promptBox,textAlign:"left",padding:"16px"}}>
+              <div style={{fontSize:"11px",color:"#52525b"}}>Waiting for the Judge to pick the next question...</div>
+            </div>
+          )}
+        </div>
+        {/* DIVIDER */}
+        <div style={S.divider}><div style={S.dividerText}>Divider</div></div>
+        {/* RIGHT — Judge */}
+        <div style={S.panel} ref={scrollRef}>
+          <div style={S.panelTitle}>Judge's View — What They See</div>
+          {exchanges.length===0&&phase==="writing"&&(
+            <div style={{fontSize:"12px",color:"#3f3f46",textAlign:"center",padding:"40px 20px",lineHeight:1.8}}>
+              The Judge sees two responses to each question — one from you, one from the AI — revealed simultaneously. They don't know which is which.
+            </div>
+          )}
+          {exchanges.map((ex,i)=><ExchangeDisplay key={i} exchange={ex} index={i}/>)}
+          {phase==="waiting"&&<WaitingDots/>}
+          {phase==="pickQuestion"&&mode==="pair"&&<QuestionPicker options={questionOptions} onPick={handlePick}/>}
+          {phase==="pickQuestion"&&mode==="solo"&&<WaitingDots label="judge is selecting next question"/>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<TuringFlip />);
+</script>
 </body>
 </html>
