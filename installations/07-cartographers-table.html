@@ -366,9 +366,15 @@ function MapBackground({ width, height, terms }) {
 }
 
 // ─── Hoverable Token Button ──────────────────────────────────
+// On touch/no-hover devices force the "lit" visual state so buttons
+// never look dead — hover is a desktop-only affordance.
+const IS_TOUCH = typeof window !== "undefined"
+  && window.matchMedia && window.matchMedia("(hover: none)").matches;
+
 function TokenButton({ colorKey, isActive, onClick }) {
   const [hovered, setHovered] = useState(false);
   const v = TOKEN_COLORS[colorKey];
+  const lit = hovered || IS_TOUCH;
   return (
     <button
       onClick={onClick}
@@ -379,12 +385,12 @@ function TokenButton({ colorKey, isActive, onClick }) {
         color: "#d8ccb8",
         cursor: "pointer", lineHeight: 1.3,
         fontFamily: "'Crimson Text', Georgia, serif",
-        background: hovered ? v.hover : v.bg,
-        opacity: isActive ? 1 : hovered ? 0.88 : 0.5,
+        background: lit ? v.hover : v.bg,
+        opacity: isActive ? 1 : lit ? 0.88 : 0.5,
         border: isActive ? "2px solid #c8b898" : "2px solid transparent",
         transform: isActive ? "scale(1.06)" : hovered ? "scale(1.04)" : "scale(1)",
         transition: "all 0.15s ease",
-        boxShadow: hovered ? `0 0 12px ${v.glow}` : "none",
+        boxShadow: lit ? `0 0 12px ${v.glow}` : "none",
       }}
     >
       {v.label}
