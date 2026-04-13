@@ -106,7 +106,27 @@ body{background:var(--bg);color:var(--text);font-family:'Newsreader',Georgia,ser
 .es .ic{font-size:3rem;margin-bottom:1rem;opacity:.3}
 .es p{font-family:'DM Mono',monospace;font-size:.75rem;max-width:280px;line-height:1.6}
 
-@media(max-width:1100px){.main{grid-template-columns:1fr}.tb,.cp{max-height:none;position:static;border:none;border-bottom:1px solid var(--border)}}
+@media(max-width:1100px){.main{grid-template-columns:1fr}.tb,.cp{max-height:none;position:static;border:none;border-bottom:1px solid var(--border)}.vs{max-height:none}}
+@media(max-width:640px){
+  .header{padding:2rem 1rem 1.2rem}
+  .header h1{font-size:2rem}
+  .header .sub{font-size:.7rem}
+  .hp{font-size:.62rem;padding:.4rem .9rem;text-align:left;line-height:1.4}
+  .vs{padding:1.5rem 1.2rem}
+  .tt{font-size:1.7rem}
+  .td{font-size:.95rem}
+  .cp{padding:1.2rem}
+  .vc{padding:1rem 1.1rem}
+  .bh{padding:.9rem 1rem}
+  .ti{padding:.55rem 1rem}
+  .sg{grid-template-columns:1fr 1fr}
+  .sn{font-size:2.6rem}
+}
+@media(max-width:420px){
+  .header h1{font-size:1.7rem}
+  .vs{padding:1.2rem 1rem}
+  .tt{font-size:1.5rem}
+}
 </style>
 </head>
 <body>

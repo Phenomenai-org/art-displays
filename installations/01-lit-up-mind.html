@@ -294,6 +294,33 @@
   ::-webkit-scrollbar { width: 4px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
+
+  /* ===== Mobile ===== */
+  @media (max-width: 720px) {
+    .scene { padding: 32px 20px; }
+    .feature-diagram { gap: 14px; }
+    .compare-row { gap: 28px; }
+    .compare-dots { width: 88px; }
+    #interactive-screen { overflow-y: auto; }
+    #interactive-screen .top-bar { padding: 14px 16px 0; }
+    #interactive-screen .top-bar h2 { font-size: 18px; }
+    .story-tabs { padding: 10px 16px; }
+    .int-word-area { padding: 0 16px; line-height: 1.9; }
+    .int-controls { padding: 8px 16px; }
+    .int-body { padding: 8px 12px 16px; gap: 10px; flex-direction: column; }
+    .int-svg-wrap { flex: 1 1 auto; min-width: 0; width: 100%; }
+    .int-side { flex: 1 1 auto; min-width: 0; width: 100%; max-height: 40vh; }
+    .status-line { padding: 6px 16px 16px; }
+    #scene-counter { left: 12px; bottom: 12px; }
+    #controls { right: 12px; bottom: 10px; }
+    #controls button { padding: 5px 9px; font-size: 9px; }
+  }
+
+  @media (max-width: 480px) {
+    .scene { padding: 24px 16px; }
+    .feature-diagram .arrow-between { display: none; }
+    .feature-diagram { gap: 12px 18px; }
+  }
 </style>
 </head>
 <body>

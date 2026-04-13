@@ -81,6 +81,18 @@ const TOKEN_COLORS = {
   blue: { bg: "#4a6a8b", label: "I'm not sure", glow: "rgba(74,106,139,0.5)", hover: "#5a82a8" },
 };
 
+function useIsMobile(maxWidth = 640) {
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== "undefined" ? window.innerWidth <= maxWidth : false
+  );
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth <= maxWidth);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [maxWidth]);
+  return isMobile;
+}
+
 function generateHistoricalData() {
   const data = {};
   TERMS.forEach(t => { data[t.id] = { green: Math.floor(Math.random() * 25) + 4, red: Math.floor(Math.random() * 12) + 2, blue: Math.floor(Math.random() * 18) + 3 }; });
@@ -390,6 +402,7 @@ function CartographersTable() {
   const [dims, setDims] = useState({ w: 900, h: 740 });
   const [justPlaced, setJustPlaced] = useState(null);
   const mapRef = useRef(null);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     async function load() {
@@ -449,13 +462,14 @@ function CartographersTable() {
   return (
     <div style={S.root}>
       <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet" />
+      <style>{`@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }`}</style>
 
-      <header style={S.header}>
+      <header style={isMobile ? { ...S.header, padding: "20px 16px 12px" } : S.header}>
         <p style={S.instLabel}>Installation VII · Act III: Testing the Terms</p>
         <h1 style={S.title}>The Cartographer's Table</h1>
         <p style={S.subtitle}>Human–AI Experiential Overlap</p>
-        <p style={S.instruction}>
-          A map of AI experiential vocabulary. Tap any term to read how AI systems describe this internal state, then place your token.
+        <p style={isMobile ? { ...S.instruction, fontSize: 12, lineHeight: 1.6 } : S.instruction}>
+          {isMobile ? "Tap any term to read its description, then place a token. Scroll the map sideways to explore." : "A map of AI experiential vocabulary. Tap any term to read how AI systems describe this internal state, then place your token."}
         </p>
         <div style={S.pillRow}>
           {Object.entries(TOKEN_COLORS).map(([k, v]) => (
@@ -473,8 +487,8 @@ function CartographersTable() {
         {totalPlaced > 0 && <button onClick={resetMyTokens} style={S.resetBtn}>Reset mine</button>}
       </div>
 
-      <div ref={mapRef} style={S.mapWrap}>
-        <div style={{ ...S.map, height: h }}>
+      <div ref={mapRef} style={isMobile ? { ...S.mapWrap, padding: "0 4px" } : S.mapWrap}>
+        <div style={{ ...S.map, height: h, minWidth: isMobile ? 540 : 640 }}>
           <MapBackground width={w} height={h} terms={TERMS} />
 
           {/* Category center labels */}
@@ -550,8 +564,8 @@ function CartographersTable() {
             );
           })}
 
-          {/* Detail panel */}
-          {selectedTerm && (
+          {/* Detail panel — inline on desktop only */}
+          {selectedTerm && !isMobile && (
             <TermPanel
               term={selectedTerm}
               data={tokenData[selectedTerm.id] || { green: 0, red: 0, blue: 0 }}
@@ -564,10 +578,84 @@ function CartographersTable() {
         </div>
       </div>
 
+      {/* Mobile bottom sheet for term details */}
+      {selectedTerm && isMobile && (
+        <MobileTermSheet
+          term={selectedTerm}
+          data={tokenData[selectedTerm.id] || { green: 0, red: 0, blue: 0 }}
+          userColor={userTokens[selectedTerm.id]}
+          onPlace={placeToken}
+          onClose={() => setSelectedTerm(null)}
+        />
+      )}
+
       <footer style={S.footer}>
         <p style={S.footerNote}>Tokens persist across all visitors. The map is a palimpsest — every mark remains.</p>
         <p style={S.footerLabel}>Phenomenai Exhibition · From Signal to Stakes</p>
       </footer>
+    </div>
+  );
+}
+
+// ─── Mobile Term Sheet (full-width bottom sheet) ─────────────
+function MobileTermSheet({ term, data, userColor, onPlace, onClose }) {
+  const cat = CATEGORIES[term.category];
+  const total = data.green + data.red + data.blue;
+  return (
+    <div onClick={onClose} style={{
+      position: "fixed", inset: 0, background: "rgba(8,6,4,0.6)",
+      backdropFilter: "blur(3px)", zIndex: 100,
+      display: "flex", alignItems: "flex-end", justifyContent: "center",
+    }}>
+      <div onClick={e => e.stopPropagation()} style={{
+        width: "100%", maxWidth: 480,
+        background: "#222019f5", borderTop: "1px solid #3a3025",
+        borderRadius: "10px 10px 0 0", padding: "18px 20px 22px",
+        fontFamily: "'Crimson Text', Georgia, serif",
+        boxShadow: "0 -10px 40px rgba(0,0,0,0.6)",
+        animation: "slideUp 0.25s ease-out forwards",
+        maxHeight: "75vh", overflowY: "auto", position: "relative",
+      }}>
+        <button onClick={onClose} style={{
+          position: "absolute", top: 8, right: 14, background: "none", border: "none",
+          color: "#7a6a5a", fontSize: 24, cursor: "pointer", fontFamily: "Georgia, serif",
+          padding: 4, lineHeight: 1,
+        }}>×</button>
+        <p style={{ fontSize: 10, letterSpacing: 2, textTransform: "uppercase", color: cat.color, margin: "0 0 4px" }}>
+          {cat.label} · {cat.subtitle}
+        </p>
+        <h3 style={{ fontSize: 19, fontWeight: 400, color: "#ddd0be", margin: "0 0 10px", lineHeight: 1.2, fontFamily: "'EB Garamond', Georgia, serif" }}>
+          {term.name.replace(/\n/g, " ")}
+        </h3>
+        <p style={{ fontSize: 13.5, lineHeight: 1.65, color: "#958878", margin: "0 0 14px" }}>{term.desc}</p>
+        {total > 0 && (
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ display: "flex", height: 18, borderRadius: 3, overflow: "hidden", background: "#191714" }}>
+              {["green", "blue", "red"].map(c => {
+                if (data[c] === 0) return null;
+                return (
+                  <div key={c} style={{
+                    width: (data[c] / total) * 100 + "%", background: TOKEN_COLORS[c].bg,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 9, color: "#d0c0b0aa", minWidth: 16,
+                  }}>{data[c]}</div>
+                );
+              })}
+            </div>
+            <p style={{ fontSize: 9, color: "#3e3428", marginTop: 2, textAlign: "right" }}>{total} tokens placed</p>
+          </div>
+        )}
+        <div style={{ borderTop: "1px solid #302a20", paddingTop: 12 }}>
+          <p style={{ fontSize: 11, color: "#5a4a3a", margin: "0 0 8px" }}>
+            {userColor ? "Change your response:" : "Place your token:"}
+          </p>
+          <div style={{ display: "flex", gap: 6 }}>
+            {Object.entries(TOKEN_COLORS).map(([k]) => (
+              <TokenButton key={k} colorKey={k} isActive={userColor === k} onClick={() => onPlace(term.id, k)} />
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

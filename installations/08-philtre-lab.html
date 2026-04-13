@@ -38,6 +38,19 @@ const VOICE_ID = "nPczCjzI2devNBz1zQrb";
      two lenses are stacked, the colors blend via CSS layering.
 */
 
+// ─── HOOKS ──────────────────────────────────────────────────────────
+function useIsMobile(maxWidth = 640) {
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== "undefined" ? window.innerWidth <= maxWidth : false
+  );
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth <= maxWidth);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [maxWidth]);
+  return isMobile;
+}
+
 // ─── LENS DEFINITIONS ───────────────────────────────────────────────
 // Each lens has a color, a label, and a system prompt that alters how 
 // the model responds. The system prompt is the "philtre" — it's what 
@@ -197,6 +210,7 @@ function PhiltreLab() {
   const abortRef = useRef(0);
   const audioRef = useRef(null);
   const audioUrlRef = useRef(null);
+  const isMobile = useIsMobile();
 
   // ─── TEXT-TO-SPEECH (ElevenLabs via worker) ──────────────────────
   // We POST the current response to the worker, get back audio/mpeg
@@ -312,18 +326,18 @@ function PhiltreLab() {
 
   // ─── RENDER ─────────────────────────────────────────────────────
   return (
-    <div style={styles.root}>
+    <div style={isMobile ? { ...styles.root, padding: "22px 14px 32px" } : styles.root}>
       {/* Google Fonts */}
       <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@300;400&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
 
       {/* Header */}
-      <div style={styles.header}>
-        <div style={styles.title}>PHILTRE LAB</div>
-        <div style={styles.subtitle}>Select a lens. Look through it. See what changes.</div>
+      <div style={isMobile ? { ...styles.header, marginBottom: 22 } : styles.header}>
+        <div style={isMobile ? { ...styles.title, fontSize: 11, letterSpacing: 6 } : styles.title}>PHILTRE LAB</div>
+        <div style={isMobile ? { ...styles.subtitle, fontSize: 14, padding: "0 12px" } : styles.subtitle}>Select a lens. Look through it. See what changes.</div>
       </div>
 
       {/* Station Selector */}
-      <div style={styles.stationBar}>
+      <div style={isMobile ? { ...styles.stationBar, gap: 8, marginBottom: 20 } : styles.stationBar}>
         <button
           onClick={() => { setStationIndex(i => Math.max(0, i - 1)); }}
           style={{
@@ -338,7 +352,7 @@ function PhiltreLab() {
           <div style={styles.stationLabel}>
             Station {station.number} · {station.note}
           </div>
-          <div style={styles.stationPrompt}>"{station.prompt}"</div>
+          <div style={isMobile ? { ...styles.stationPrompt, fontSize: 18 } : styles.stationPrompt}>"{station.prompt}"</div>
         </div>
         <button
           onClick={() => { setStationIndex(i => Math.min(STATIONS.length - 1, i + 1)); }}
@@ -353,7 +367,7 @@ function PhiltreLab() {
       </div>
 
       {/* Viewing Area — the "screen" you look through the lens at */}
-      <div style={styles.viewingArea}>
+      <div style={isMobile ? { ...styles.viewingArea, minHeight: 220 } : styles.viewingArea}>
         {/* Color overlay — this is the "glass tint" */}
         <div style={{
           ...styles.colorOverlay,
@@ -372,6 +386,7 @@ function PhiltreLab() {
         {/* Response text */}
         <div style={{
           ...styles.responseContainer,
+          padding: isMobile ? "32px 22px 44px" : "40px 36px",
           filter: focusState === "blurring" ? "blur(8px)" : focusState === "focusing" ? "blur(0px)" : "blur(0px)",
           opacity: focusState === "blurring" ? 0.3 : 1,
           transition: focusState === "blurring" 
@@ -386,7 +401,7 @@ function PhiltreLab() {
             </div>
           )}
           {(hasGenerated || isLoading) && (
-            <div style={styles.responseText}>{responseText}</div>
+            <div style={isMobile ? { ...styles.responseText, fontSize: 16, lineHeight: 1.7 } : styles.responseText}>{responseText}</div>
           )}
         </div>
 
@@ -429,10 +444,10 @@ function PhiltreLab() {
       )}
 
       {/* Lens Rack */}
-      <div style={styles.rackSection}>
+      <div style={isMobile ? { ...styles.rackSection, marginTop: 26 } : styles.rackSection}>
         <div style={styles.rackLabel}>LENS RACK</div>
         <div style={styles.rackSubLabel}>Select up to two lenses to stack</div>
-        <div style={styles.lensGrid}>
+        <div style={isMobile ? { ...styles.lensGrid, gridTemplateColumns: "repeat(2, 1fr)", gap: 10 } : styles.lensGrid}>
           {LENSES.map(lens => {
             const isSelected = selectedLenses.some(l => l.id === lens.id);
             return (
@@ -441,6 +456,9 @@ function PhiltreLab() {
                 onClick={() => toggleLens(lens)}
                 style={{
                   ...styles.lensButton,
+                  padding: isMobile ? "14px 10px 12px" : "16px 8px 12px",
+                  flexDirection: isMobile ? "row" : "column",
+                  gap: isMobile ? 12 : 10,
                   borderColor: isSelected ? lens.color : "rgba(255,255,255,0.1)",
                   backgroundColor: isSelected ? `${lens.color}18` : "transparent",
                 }}
@@ -448,9 +466,12 @@ function PhiltreLab() {
                 {/* The glass circle */}
                 <div style={{
                   ...styles.lensCircle,
+                  width: isMobile ? 36 : 44,
+                  height: isMobile ? 36 : 44,
+                  flexShrink: 0,
                   backgroundColor: `${lens.color}${isSelected ? "55" : "30"}`,
-                  boxShadow: isSelected 
-                    ? `0 0 20px ${lens.color}44, inset 0 0 12px ${lens.color}33` 
+                  boxShadow: isSelected
+                    ? `0 0 20px ${lens.color}44, inset 0 0 12px ${lens.color}33`
                     : `inset 0 0 8px ${lens.color}22`,
                   transform: isSelected ? "scale(1.1)" : "scale(1)",
                 }}>
@@ -459,6 +480,8 @@ function PhiltreLab() {
                 </div>
                 <div style={{
                   ...styles.lensName,
+                  fontSize: isMobile ? 11 : 9,
+                  textAlign: isMobile ? "left" : "center",
                   color: isSelected ? lens.color : "rgba(255,255,255,0.5)",
                 }}>
                   {lens.name}

@@ -117,9 +117,38 @@
   .btn.primary { border-color:rgba(255,255,255,0.2); }
 
   @media(max-width:900px) {
-    .stage { grid-template-columns:1fr; }
-    .arena { min-height:380px; }
-    .arena-ring { width:340px; height:340px; }
+    .stage { grid-template-columns:1fr; padding-bottom:6rem; }
+    .arena { min-height:auto; padding:30px 10px; }
+    .arena-ring { width:min(440px,86vw); height:min(440px,86vw); }
+  }
+
+  @media(max-width:600px) {
+    .header { padding:1.6rem 1rem 0.6rem; }
+    .header h1 { font-size:1.9rem; }
+    .header .sub { font-size:0.6rem; line-height:1.5; }
+    .stage { padding:1rem; gap:1rem; padding-bottom:6rem; }
+    .arena { padding:20px 0; }
+    .arena-ring { width:min(360px,90vw); height:min(360px,90vw); }
+    .seat { width:64px; }
+    .holo-figure { width:38px; height:50px; }
+    .holo-figure .head { width:12px; height:12px; top:6px; }
+    .holo-figure .silhouette { width:22px; height:32px; }
+    .seat-name { font-size:0.48rem; margin-top:3px; }
+    .panel-right { gap:0.8rem; }
+    .counter, .captions, .role-select { padding:0.85rem 1rem; }
+    .counter-turn { font-size:2rem; }
+    .captions { min-height:160px; max-height:240px; }
+    .t-text { font-size:0.85rem; }
+    .t-speaker { min-width:70px; font-size:0.5rem; }
+    .controls { bottom:0.8rem; gap:0.35rem; }
+    .btn { padding:0.45rem 0.75rem; font-size:0.6rem; }
+  }
+
+  @media(max-width:380px) {
+    .arena-ring { width:min(300px,92vw); height:min(300px,92vw); }
+    .seat { width:54px; }
+    .holo-figure { width:32px; height:42px; }
+    .seat-name { display:none; }
   }
 </style>
 </head>
@@ -239,15 +268,16 @@ function stripHtml(html) {
 
 // === BUILD SEATS ===
 const ring = document.getElementById('arenaRing');
-const cx = 230, cy = 230, rad = 218;
+// Percentage-based seat positions so the ring scales responsively
+const radPct = 47.4; // % of ring radius (218/460 * 100)
 DEBATERS.forEach((d, i) => {
   const angle = ((2 * Math.PI) / 7) * i - Math.PI / 2;
-  const x = cx + rad * Math.cos(angle);
-  const y = cy + rad * Math.sin(angle);
+  const xPct = 50 + radPct * Math.cos(angle);
+  const yPct = 50 + radPct * Math.sin(angle);
   const seat = document.createElement('div');
   seat.className = 'seat' + (i === 6 ? ' empty-chair' : '');
   seat.dataset.idx = i;
-  seat.style.cssText = `left:${x}px;top:${y}px;transform:translate(-50%,-50%);`;
+  seat.style.cssText = `left:${xPct}%;top:${yPct}%;transform:translate(-50%,-50%);`;
   const glow = `rgba(${hexToRgb(d.color)},0.3)`;
   seat.innerHTML = `
     <div class="holo-figure" style="background:linear-gradient(180deg,${glow},transparent);box-shadow:0 0 20px ${glow};">
