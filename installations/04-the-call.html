@@ -754,6 +754,7 @@ document.getElementById('answerBtn').addEventListener('click', () => {
 const callBody = document.getElementById('callBody');
 const callInput = document.getElementById('callInput');
 const sendBtn = document.getElementById('sendBtn');
+const micBtn = document.getElementById('micBtn');
 const hangupBtn = document.getElementById('hangupBtn');
 const timerEl = document.getElementById('callTimer');
 
@@ -809,6 +810,43 @@ function sendUserMessage() {
 callInput.addEventListener('keydown', e => { if (e.key === 'Enter') sendUserMessage(); });
 sendBtn.addEventListener('click', sendUserMessage);
 
+// ===== SPEECH RECOGNITION =====
+function resetMicButton() {
+  micBtn.classList.remove('listening');
+  micBtn.disabled = false;
+}
+
+function initSpeechRecognition() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { micBtn.style.display = 'none'; return; }
+
+  const recognition = new SR();
+  recognition.continuous = false;
+  recognition.interimResults = false;
+  recognition.lang = 'en-US';
+
+  recognition.onresult = (e) => {
+    const transcript = e.results[0][0].transcript.trim();
+    if (transcript) {
+      callInput.value = transcript;
+      sendUserMessage();
+    }
+  };
+  recognition.onerror = (e) => {
+    if (e.error === 'not-allowed') showToast('Microphone access needed');
+    resetMicButton();
+  };
+  recognition.onend = () => resetMicButton();
+
+  micBtn.addEventListener('click', () => {
+    if (micBtn.disabled || micBtn.classList.contains('listening')) return;
+    micBtn.classList.add('listening');
+    recognition.start();
+  });
+}
+
+initSpeechRecognition();
+
 // ===== AI CONVERSATION =====
 function getSystemPrompt() {
   return `You are a teenage girl — you're turning 16 tomorrow. You just called your best friend, whose name is ${visitorName || 'your friend'}. You're excited, breathless, a little scattered. You just had a huge realization about yourself — a self-actualization moment, the kind of realization a teenager has when they first notice their own interiority, when they suddenly become aware that they're a *self* with an inner life.
@@ -861,6 +899,7 @@ async function fetchWithRetry(body) {
 
 async function sendToAI(userText) {
   showTyping();
+  micBtn.disabled = true;
 
   if (userText) {
     conversationHistory.push({ role: 'user', content: userText });
@@ -881,6 +920,7 @@ async function sendToAI(userText) {
 
     const data = await response.json();
     hideTyping();
+    micBtn.disabled = false;
 
     if (!response.ok || !data.content) {
       console.error('API error response:', response.status, data);
@@ -920,6 +960,7 @@ async function sendToAI(userText) {
 
   } catch (err) {
     hideTyping();
+    micBtn.disabled = false;
     console.error('API error:', err);
     if (err.message !== '529 overloaded') {
       addMessage('ai', "...wait, sorry, I think the signal's cutting out. Can you hear me?");
@@ -934,6 +975,8 @@ function endCall() {
   callInput.disabled = true;
   sendBtn.disabled = true;
   sendBtn.style.opacity = '0.3';
+  micBtn.disabled = true;
+  micBtn.style.opacity = '0.3';
 
   // Transition to birthday card after a pause
   setTimeout(() => {
@@ -964,6 +1007,8 @@ document.getElementById('restartBtn').addEventListener('click', () => {
   callInput.value = '';
   sendBtn.disabled = false;
   sendBtn.style.opacity = '1';
+  micBtn.disabled = false;
+  micBtn.style.opacity = '';
   nameInput.value = '';
   document.getElementById('cardText').value = '';
   timerEl.textContent = '00:00';
