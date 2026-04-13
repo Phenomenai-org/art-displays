@@ -811,9 +811,11 @@ callInput.addEventListener('keydown', e => { if (e.key === 'Enter') sendUserMess
 sendBtn.addEventListener('click', sendUserMessage);
 
 // ===== SPEECH RECOGNITION =====
+let callEnded = false;
+
 function resetMicButton() {
   micBtn.classList.remove('listening');
-  micBtn.disabled = false;
+  if (!callEnded) micBtn.disabled = false;
 }
 
 function initSpeechRecognition() {
@@ -972,6 +974,7 @@ function endCall() {
   clearInterval(callInterval);
   stopSpeaking();
   addMessage('system', 'Call ended');
+  callEnded = true;
   callInput.disabled = true;
   sendBtn.disabled = true;
   sendBtn.style.opacity = '0.3';
@@ -998,6 +1001,7 @@ document.getElementById('mailBtn').addEventListener('click', () => {
 
 // ===== SCREEN 5: RESTART =====
 document.getElementById('restartBtn').addEventListener('click', () => {
+  callEnded = false;
   visitorName = '';
   conversationHistory = [];
   callSeconds = 0;
