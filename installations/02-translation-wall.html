@@ -127,6 +127,14 @@ body{background:var(--bg);color:var(--text);font-family:'Newsreader',Georgia,ser
   .vs{padding:1.2rem 1rem}
   .tt{font-size:1.5rem}
 }
+/* Hoverless devices: apply hover affordances permanently so list items and
+   cards don't read as inert text. */
+@media(hover:none){
+  .ti{background:var(--surface)}
+  .fb{background:var(--surface2);color:var(--text);border-color:var(--text-dim)}
+  .vc{border-color:var(--text-dim)}
+  .btt{color:var(--text);border-color:var(--text-dim)}
+}
 </style>
 </head>
 <body>

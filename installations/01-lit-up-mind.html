@@ -290,6 +290,13 @@
   }
   #controls button:hover { color: #a29bfe; border-color: rgba(108,92,231,0.3); }
 
+  /* Hoverless devices: keep nav controls visibly active so they don't
+     read as disabled grey text on mobile. */
+  @media (hover: none) {
+    #controls button { color: #a29bfe; border-color: rgba(108,92,231,0.3); }
+    .int-btn { background: rgba(108,92,231,0.2); }
+  }
+
   /* Scrollbar */
   ::-webkit-scrollbar { width: 4px; }
   ::-webkit-scrollbar-track { background: transparent; }

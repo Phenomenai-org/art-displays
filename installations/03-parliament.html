@@ -184,6 +184,13 @@
     .seat-name { display:none; }
     .start-overlay { width:120px; height:120px; }
   }
+
+  /* Hoverless devices: surface hover affordances so role options and
+     control buttons don't look inert. */
+  @media(hover:none) {
+    .role-opt { background:rgba(255,255,255,0.04); border-color:var(--ring); }
+    .btn { background:rgba(255,255,255,0.06); border-color:rgba(255,255,255,0.15); }
+  }
 </style>
 </head>
 <body>
