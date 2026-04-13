@@ -197,6 +197,182 @@ function blendColors(colors) {
   return `rgb(${avg[0]}, ${avg[1]}, ${avg[2]})`;
 }
 
+// ─── TUTORIAL OVERLAY ────────────────────────────────────────────────
+// First-visit tutorial explaining what the Philtre Lab is and how
+// to use it. Dismissal is persisted in localStorage. Re-openable
+// from the Help button in the header.
+
+const TUTORIAL_STORAGE_KEY = "philtreLabTutorialSeen_v1";
+
+const TUTORIAL_SLIDES = [
+  {
+    title: "Welcome to Philtre Lab",
+    body: "Philtre Lab is a working draft of a mind you can tune. Each \"lens\" is a philtre — a prompt-shaped filter that changes how an AI thinks about a question.",
+    icon: "◇",
+  },
+  {
+    title: "Pick a station",
+    body: "Each station is a prompt — a question the lab will answer. Use the arrows at the top to move between them. There are several stations to explore.",
+    icon: "‹ ›",
+  },
+  {
+    title: "Select a lens",
+    body: "Tap a lens in the rack at the bottom to look through it. The text regenerates with that lens's cognitive state shaping every sentence.",
+    icon: "◎",
+  },
+  {
+    title: "Stack two lenses",
+    body: "You can stack up to two lenses at once. The colors blend, and the response is shaped by both states simultaneously. Selecting a third replaces the oldest.",
+    icon: "◎◎",
+  },
+  {
+    title: "Watch it transform",
+    body: "Regenerate to re-run the same lens combination. Tap Listen to hear the response. You can reopen this tour any time from the Help button.",
+    icon: "↻",
+  },
+];
+
+function Tutorial({ onClose }) {
+  const [slide, setSlide] = useState(0);
+  const total = TUTORIAL_SLIDES.length;
+  const isLast = slide === total - 1;
+  const s = TUTORIAL_SLIDES[slide];
+
+  const next = () => { if (isLast) onClose(); else setSlide(slide + 1); };
+  const prev = () => { if (slide > 0) setSlide(slide - 1); };
+
+  // Dismiss on Escape
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 1000,
+      background: "rgba(5, 8, 15, 0.88)",
+      backdropFilter: "blur(6px)",
+      WebkitBackdropFilter: "blur(6px)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      padding: "24px 18px",
+      animation: "philtreFadeIn 0.35s ease-out",
+    }}>
+      <style>{`
+        @keyframes philtreFadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes philtreSlideUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+      `}</style>
+      <div style={{
+        position: "relative",
+        width: "100%", maxWidth: 480,
+        background: "rgba(10, 14, 22, 0.96)",
+        border: "1px solid rgba(255,255,255,0.12)",
+        borderRadius: 6,
+        padding: "36px 28px 24px",
+        boxShadow: "0 0 60px rgba(74, 144, 217, 0.18), inset 0 0 40px rgba(255,255,255,0.02)",
+        fontFamily: "'Cormorant Garamond', Georgia, serif",
+        color: "rgba(232, 228, 216, 0.92)",
+        textAlign: "center",
+      }}>
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          aria-label="Close tutorial"
+          style={{
+            position: "absolute", top: 10, right: 12,
+            background: "transparent", border: "none",
+            color: "rgba(255,255,255,0.45)", cursor: "pointer",
+            fontSize: 22, fontFamily: "inherit", lineHeight: 1, padding: 6,
+          }}
+        >×</button>
+
+        {/* Step indicator */}
+        <div style={{
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: 9, letterSpacing: 3, textTransform: "uppercase",
+          color: "rgba(255,255,255,0.35)", marginBottom: 10,
+        }}>
+          Tutorial · {slide + 1} / {total}
+        </div>
+
+        <div style={{
+          fontSize: 34, color: "rgba(255,255,255,0.35)",
+          marginBottom: 8, fontFamily: "'Instrument Serif', serif",
+          letterSpacing: 4,
+          animation: "philtreSlideUp 0.3s ease-out",
+        }}>{s.icon}</div>
+
+        <div style={{
+          fontFamily: "'Instrument Serif', serif",
+          fontSize: 26, fontStyle: "italic",
+          color: "rgba(255,255,255,0.95)",
+          marginBottom: 14,
+          animation: "philtreSlideUp 0.3s ease-out",
+        }}>{s.title}</div>
+
+        <div style={{
+          fontFamily: "'Cormorant Garamond', Georgia, serif",
+          fontSize: 17, lineHeight: 1.65,
+          color: "rgba(232, 228, 216, 0.78)",
+          marginBottom: 24,
+          animation: "philtreSlideUp 0.35s ease-out",
+        }}>{s.body}</div>
+
+        {/* Dot pager */}
+        <div style={{ display: "flex", justifyContent: "center", gap: 8, marginBottom: 22 }}>
+          {TUTORIAL_SLIDES.map((_, i) => (
+            <span key={i} style={{
+              width: 6, height: 6, borderRadius: 3,
+              background: i === slide ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.18)",
+              transition: "background 0.2s",
+            }}/>
+          ))}
+        </div>
+
+        {/* Controls */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+          <button
+            onClick={prev}
+            disabled={slide === 0}
+            style={{
+              background: "transparent",
+              border: "1px solid rgba(255,255,255,0.12)",
+              color: "rgba(255,255,255,0.55)",
+              padding: "10px 18px", borderRadius: 3,
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 10, letterSpacing: 2, textTransform: "uppercase",
+              cursor: slide === 0 ? "not-allowed" : "pointer",
+              opacity: slide === 0 ? 0.3 : 1,
+            }}
+          >‹ Back</button>
+          <button
+            onClick={onClose}
+            style={{
+              background: "transparent", border: "none",
+              color: "rgba(255,255,255,0.4)",
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 10, letterSpacing: 2, textTransform: "uppercase",
+              cursor: "pointer", padding: "10px 4px",
+            }}
+          >Skip</button>
+          <button
+            onClick={next}
+            style={{
+              background: "rgba(74, 144, 217, 0.18)",
+              border: "1px solid rgba(74, 144, 217, 0.5)",
+              color: "rgba(255,255,255,0.95)",
+              padding: "10px 22px", borderRadius: 3,
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 10, letterSpacing: 2, textTransform: "uppercase",
+              cursor: "pointer",
+            }}
+          >{isLast ? "Begin ›" : "Next ›"}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── MAIN COMPONENT ──────────────────────────────────────────────────
 
 function PhiltreLab() {
@@ -207,10 +383,20 @@ function PhiltreLab() {
   const [hasGenerated, setHasGenerated] = useState(false);
   const [focusState, setFocusState] = useState("sharp"); // "sharp" | "blurring" | "focusing"
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [showTutorial, setShowTutorial] = useState(() => {
+    try { return localStorage.getItem(TUTORIAL_STORAGE_KEY) !== "true"; }
+    catch (e) { return true; }
+  });
   const abortRef = useRef(0);
   const audioRef = useRef(null);
   const audioUrlRef = useRef(null);
   const isMobile = useIsMobile();
+
+  const dismissTutorial = useCallback(() => {
+    setShowTutorial(false);
+    try { localStorage.setItem(TUTORIAL_STORAGE_KEY, "true"); } catch (e) {}
+  }, []);
+  const openTutorial = useCallback(() => { setShowTutorial(true); }, []);
 
   // ─── TEXT-TO-SPEECH (ElevenLabs via worker) ──────────────────────
   // We POST the current response to the worker, get back audio/mpeg
@@ -331,10 +517,33 @@ function PhiltreLab() {
       <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@300;400&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
 
       {/* Header */}
-      <div style={isMobile ? { ...styles.header, marginBottom: 22 } : styles.header}>
+      <div style={isMobile ? { ...styles.header, marginBottom: 22, position: "relative" } : { ...styles.header, position: "relative" }}>
         <div style={isMobile ? { ...styles.title, fontSize: 11, letterSpacing: 6 } : styles.title}>PHILTRE LAB</div>
         <div style={isMobile ? { ...styles.subtitle, fontSize: 14, padding: "0 12px" } : styles.subtitle}>Select a lens. Look through it. See what changes.</div>
+        {/* Re-open tutorial at any time */}
+        <button
+          onClick={openTutorial}
+          aria-label="Open tutorial"
+          style={{
+            position: "absolute",
+            top: isMobile ? -4 : 0,
+            right: isMobile ? 0 : 0,
+            background: "transparent",
+            border: "1px solid rgba(255,255,255,0.18)",
+            color: "rgba(255,255,255,0.55)",
+            padding: isMobile ? "6px 10px" : "6px 14px",
+            borderRadius: 3,
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: isMobile ? 9 : 10,
+            letterSpacing: 2,
+            textTransform: "uppercase",
+            cursor: "pointer",
+          }}
+        >? Help</button>
       </div>
+
+      {/* Tutorial overlay */}
+      {showTutorial && <Tutorial onClose={dismissTutorial} />}
 
       {/* Station Selector */}
       <div style={isMobile ? { ...styles.stationBar, gap: 8, marginBottom: 20 } : styles.stationBar}>
