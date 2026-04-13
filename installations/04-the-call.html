@@ -812,10 +812,11 @@ sendBtn.addEventListener('click', sendUserMessage);
 
 // ===== SPEECH RECOGNITION =====
 let callEnded = false;
+let aiResponding = false;
 
 function resetMicButton() {
   micBtn.classList.remove('listening');
-  if (!callEnded) micBtn.disabled = false;
+  if (!callEnded && !aiResponding) micBtn.disabled = false;
 }
 
 function initSpeechRecognition() {
@@ -900,6 +901,7 @@ async function fetchWithRetry(body) {
 }
 
 async function sendToAI(userText) {
+  aiResponding = true;
   showTyping();
   micBtn.disabled = true;
 
@@ -922,6 +924,7 @@ async function sendToAI(userText) {
 
     const data = await response.json();
     hideTyping();
+    aiResponding = false;
     micBtn.disabled = false;
 
     if (!response.ok || !data.content) {
@@ -962,6 +965,7 @@ async function sendToAI(userText) {
 
   } catch (err) {
     hideTyping();
+    aiResponding = false;
     micBtn.disabled = false;
     console.error('API error:', err);
     if (err.message !== '529 overloaded') {
