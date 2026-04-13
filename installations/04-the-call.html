@@ -577,6 +577,13 @@ html, body {
 <div class="install-label">Installation 4 · The Call · Phenomenai Exhibition</div>
 
 <script>
+// ===== API CONFIG =====
+// After `wrangler deploy`, replace this with your worker's URL
+// (e.g. https://phenomenai-api.<account>.workers.dev).
+const WORKER_URL = "https://phenomenai-api.phenomenai.workers.dev";
+// "Rachel" — warm young female voice, good fit for an excited teenager.
+const VOICE_ID = "21m00Tcm4TlvDq8ikWAM";
+
 // ===== STATE =====
 let visitorName = '';
 let conversationHistory = [];
@@ -585,49 +592,48 @@ let callInterval = null;
 let aiTurnCount = 0;
 const MAX_AI_TURNS = 8; // After this many AI messages, she starts wrapping up
 
-// ===== VOICE SYNTHESIS =====
-let selectedVoice = null;
-let voiceReady = false;
-
-function loadVoice() {
-  const voices = speechSynthesis.getVoices();
-  // Prefer natural-sounding female voices; try several common ones
-  const preferred = [
-    'Microsoft Jenny', 'Google UK English Female', 'Samantha',
-    'Karen', 'Moira', 'Tessa', 'Fiona', 'Victoria',
-    'Google US English', 'Microsoft Zira'
-  ];
-  for (const name of preferred) {
-    const match = voices.find(v => v.name.includes(name) && /en/i.test(v.lang));
-    if (match) { selectedVoice = match; break; }
-  }
-  // Fallback: any English female-sounding voice
-  if (!selectedVoice) {
-    selectedVoice = voices.find(v => /en/i.test(v.lang) && /female/i.test(v.name))
-      || voices.find(v => /en/i.test(v.lang))
-      || voices[0];
-  }
-  if (selectedVoice) voiceReady = true;
-}
-
-// Voices load asynchronously in some browsers
-speechSynthesis.onvoiceschanged = loadVoice;
-loadVoice();
-
-function speakText(text) {
-  if (!voiceReady) return;
-  // Cancel any current speech so new messages interrupt cleanly
-  speechSynthesis.cancel();
-  const utter = new SpeechSynthesisUtterance(text);
-  utter.voice = selectedVoice;
-  utter.rate = 1.08;   // Slightly fast — excited teenager
-  utter.pitch = 1.25;  // Higher pitch — young voice
-  utter.volume = 0.85;
-  speechSynthesis.speak(utter);
-}
+// ===== VOICE (ElevenLabs) =====
+// Each utterance becomes an Audio element fed a blob URL from the worker.
+// We keep a handle to the current one so new messages can interrupt it.
+let currentAudio = null;
+let currentAudioUrl = null;
 
 function stopSpeaking() {
-  speechSynthesis.cancel();
+  if (currentAudio) {
+    try { currentAudio.pause(); } catch (_) {}
+    currentAudio.src = '';
+    currentAudio = null;
+  }
+  if (currentAudioUrl) {
+    URL.revokeObjectURL(currentAudioUrl);
+    currentAudioUrl = null;
+  }
+}
+
+async function speakText(text) {
+  if (!text || !text.trim()) return;
+  stopSpeaking();
+  try {
+    const r = await fetch(`${WORKER_URL}/api/elevenlabs`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        text,
+        voiceId: VOICE_ID,
+        // turbo is fast enough that the voice lands close to the text appearing
+        modelId: 'eleven_turbo_v2_5',
+        voiceSettings: { stability: 0.42, similarity_boost: 0.78, style: 0.35, use_speaker_boost: true }
+      })
+    });
+    if (!r.ok) { console.warn('TTS failed', r.status); return; }
+    const blob = await r.blob();
+    currentAudioUrl = URL.createObjectURL(blob);
+    currentAudio = new Audio(currentAudioUrl);
+    currentAudio.volume = 0.95;
+    currentAudio.play().catch(err => console.warn('audio play failed', err));
+  } catch (err) {
+    console.warn('TTS error', err);
+  }
 }
 
 // ===== SCREEN MANAGEMENT =====
@@ -788,7 +794,7 @@ async function sendToAI(userText) {
     : [...conversationHistory];
 
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const response = await fetch(`${WORKER_URL}/api/anthropic`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

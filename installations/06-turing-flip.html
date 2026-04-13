@@ -140,9 +140,11 @@ const S = {
 };
 
 // --- API ---
+// After `wrangler deploy`, replace this with your worker's URL.
+const WORKER_URL = "https://phenomenai-api.phenomenai.workers.dev";
 async function askClaude(sys, msg) {
   try {
-    const r = await fetch("https://api.anthropic.com/v1/messages", {
+    const r = await fetch(`${WORKER_URL}/api/anthropic`, {
       method:"POST", headers:{"Content-Type":"application/json"},
       body: JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:1000, system:sys, messages:[{role:"user",content:msg}] }),
     });

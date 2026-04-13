@@ -1,0 +1,8 @@
+name = "phenomenai-api"
+main = "src/index.js"
+compatibility_date = "2025-01-15"
+
+# Secrets are set via:
+#   wrangler secret put ANTHROPIC_API_KEY
+#   wrangler secret put ELEVENLABS_API_KEY
+# Do NOT commit secrets to this file.
