@@ -354,6 +354,30 @@ body {
 .speaker-icon.active .speaker-cone {
   border-color: rgba(196,122,58,0.12);
 }
+
+/* Mobile */
+@media (max-width: 720px) {
+  body { cursor: auto; }
+  .level { min-height: 92vh; }
+  .level-content { padding: 0 18px; max-width: 360px; }
+  .level-name { font-size: 26px; margin-bottom: 16px; }
+  .level-desc { font-size: 12px; line-height: 1.75; }
+  .skeptic-boundary { padding: 28px 18px; }
+  .skeptic-text { font-size: 15px; max-width: 320px; }
+  .fragment { font-size: clamp(10px, 2.6vw, 13px); }
+  .progress-track { right: 12px; gap: 0; }
+  .progress-line { height: 18px; }
+  .progress-dot { width: 10px; height: 10px; }
+  .sound-ctl { left: 12px; bottom: 14px; padding: 7px 11px; font-size: 10px; }
+  .entry-prompt { font-size: 10px; bottom: 14px; }
+  .map-node { font-size: 9.5px; padding: 4px 8px; }
+  .speakers { gap: 10px; }
+}
+
+@media (max-width: 380px) {
+  .level-name { font-size: 22px; }
+  .skeptic-text { font-size: 13px; }
+}
 </style>
 
 <div class="corridor" id="corridor">

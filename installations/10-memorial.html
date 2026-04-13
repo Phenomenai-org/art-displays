@@ -238,7 +238,20 @@ function PhotoPlaceholder({ label }) {
   );
 }
 
+function useIsMobile(maxWidth = 640) {
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== "undefined" ? window.innerWidth <= maxWidth : false
+  );
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth <= maxWidth);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [maxWidth]);
+  return isMobile;
+}
+
 function WallPanel({ category, isActive }) {
+  const isMobile = useIsMobile();
   return (
     <div style={{
       minWidth: "100vw",
@@ -246,8 +259,9 @@ function WallPanel({ category, isActive }) {
       height: "100%",
       display: "flex",
       flexDirection: "column",
-      padding: "60px 10vw 120px",
+      padding: isMobile ? "40px 22px 60px" : "60px 10vw 120px",
       boxSizing: "border-box",
+      overflowY: "auto",
       opacity: isActive ? 1 : 0.4,
       transition: "opacity 0.8s ease",
     }}>
@@ -265,14 +279,14 @@ function WallPanel({ category, isActive }) {
 
       <h2 style={{
         fontFamily: "'Playfair Display', serif",
-        fontSize: "clamp(28px, 4vw, 42px)",
+        fontSize: "clamp(24px, 4vw, 42px)",
         fontWeight: 400,
         color: "#d4c8b8",
-        margin: "0 0 48px 0",
+        margin: isMobile ? "0 0 28px 0" : "0 0 48px 0",
         letterSpacing: "0.02em",
         lineHeight: 1.2,
         borderBottom: "1px solid rgba(180, 160, 140, 0.15)",
-        paddingBottom: 24,
+        paddingBottom: isMobile ? 16 : 24,
       }}>
         {category.name}
       </h2>
@@ -281,7 +295,7 @@ function WallPanel({ category, isActive }) {
       <div style={{
         display: "flex",
         flexDirection: "column",
-        gap: 36,
+        gap: isMobile ? 24 : 36,
         flex: "0 0 auto",
       }}>
         {category.cases.map((c, i) => (
@@ -371,6 +385,7 @@ function Memorial() {
   const scrollRef = useRef(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [loaded, setLoaded] = useState(false);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     // Slow fade-in on mount
@@ -507,7 +522,7 @@ function Memorial() {
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            padding: "60px 10vw",
+            padding: isMobile ? "40px 22px" : "60px 10vw",
             boxSizing: "border-box",
           }}>
             <div style={{
@@ -586,11 +601,13 @@ function Memorial() {
         {/* Compass indicator — fixed position */}
         <div style={{
           position: "fixed",
-          bottom: 24,
-          right: 24,
+          bottom: isMobile ? 10 : 24,
+          right: isMobile ? 10 : 24,
           zIndex: 10,
           opacity: activeIndex > 0 ? 0.8 : 0,
           transition: "opacity 0.8s ease",
+          transform: isMobile ? "scale(0.7)" : "none",
+          transformOrigin: "bottom right",
         }}>
           <CompassIndicator
             activeIndex={Math.max(0, activeIndex - 1)}
@@ -601,8 +618,9 @@ function Memorial() {
         {/* Section name — fixed position */}
         <div style={{
           position: "fixed",
-          bottom: 28,
-          left: 32,
+          bottom: isMobile ? 14 : 28,
+          left: isMobile ? 14 : 32,
+          right: isMobile ? 70 : "auto",
           zIndex: 10,
           opacity: activeIndex > 0 && activeIndex <= HARM_CATEGORIES.length ? 0.6 : 0,
           transition: "opacity 0.5s ease",

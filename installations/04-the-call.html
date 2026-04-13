@@ -548,10 +548,37 @@ html, body {
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 600px) {
-  .msg { max-width: 88%; font-size: 14px; }
-  .name-input { font-size: 32px; }
-  .birthday-card { padding: 24px; }
-  .card-textarea { font-size: 19px; }
+  #screen-name { gap: 22px; padding: 24px; }
+  #screen-ring { gap: 28px; padding: 24px; }
+  #screen-card { gap: 22px; padding: 24px; }
+  #screen-mailbox { gap: 28px; padding: 24px; }
+  .msg { max-width: 88%; font-size: 14px; padding: 12px 15px; }
+  .name-label { font-size: 24px; }
+  .name-input { font-size: 30px; }
+  .name-submit { padding: 11px 32px; font-size: 13px; }
+  .ring-text { font-size: 12px; letter-spacing: 3px; }
+  .call-header { padding: 14px 16px; gap: 10px; }
+  .call-status-text { font-size: 11px; }
+  .call-timer { font-size: 12px; }
+  .call-hangup { padding: 7px 14px; font-size: 11px; }
+  .call-body { padding: 18px 16px; gap: 14px; }
+  .call-input-area { padding: 12px 16px 24px; gap: 8px; }
+  .call-input { padding: 10px 16px; font-size: 14px; }
+  .card-prompt { font-size: 20px; }
+  .birthday-card { padding: 22px; }
+  .card-header-text { font-size: 24px; margin-bottom: 12px; }
+  .card-textarea { font-size: 18px; }
+  .mail-btn { padding: 12px 32px; font-size: 13px; }
+  .mailbox-icon { font-size: 56px; }
+  .mailbox-text { font-size: 22px; }
+  .install-label { display: none; }
+  .toast { font-size: 12px; padding: 9px 16px; bottom: 24px; }
+}
+
+@media (max-width: 380px) {
+  .name-input { font-size: 26px; }
+  .call-status-text { display: none; }
+  .call-header { padding: 12px 14px; }
 }
 </style>
 </head>

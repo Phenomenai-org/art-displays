@@ -73,6 +73,18 @@ function countWords(text) {
   return text.trim().split(/\s+/).filter(Boolean).length;
 }
 
+function useIsMobile(maxWidth = 760) {
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== "undefined" ? window.innerWidth <= maxWidth : false
+  );
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth <= maxWidth);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [maxWidth]);
+  return isMobile;
+}
+
 function shuffle(arr) {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -168,11 +180,12 @@ function WordCounter({ text }) {
 
 function ModeSelect({ onSelect }) {
   const [h, setH] = useState(null);
+  const isMobile = useIsMobile();
   return (
-    <div style={S.modeWrap}>
+    <div style={{...S.modeWrap, padding: isMobile?"32px 20px":"40px", gap: isMobile?"22px":"32px"}}>
       <div style={S.label}>Installation 06</div>
-      <h1 style={{...S.title,fontSize:"36px",marginBottom:"4px"}}>The Turing Flip</h1>
-      <p style={{...S.subtitle,maxWidth:"380px",lineHeight:1.6,marginBottom:"24px"}}>Can you convince someone you are an artificial intelligence?</p>
+      <h1 style={{...S.title,fontSize: isMobile?"28px":"36px",marginBottom:"4px"}}>The Turing Flip</h1>
+      <p style={{...S.subtitle,maxWidth:"380px",lineHeight:1.6,marginBottom: isMobile?"12px":"24px", padding:"0 8px"}}>Can you convince someone you are an artificial intelligence?</p>
       {[{id:"pair",t:"Paired Mode",d:"You are the Performer. An AI Judge asks questions. A real AI also answers. Convince the Judge you are the machine."},
         {id:"solo",t:"Solo Mode",d:"Convince an AI that you are an AI. It asks. It guesses. The irony is the point."}
       ].map(m=>(
@@ -186,13 +199,15 @@ function ModeSelect({ onSelect }) {
 
 function ExchangeDisplay({ exchange, index }) {
   const [rev, setRev] = useState(false);
+  const isMobile = useIsMobile(420);
   useEffect(()=>{const t=setTimeout(()=>setRev(true),400);return()=>clearTimeout(t)},[]);
+  const pair = isMobile ? { ...S.rPair, gridTemplateColumns:"1fr" } : S.rPair;
   return (
     <div style={S.exBlock}>
       <div style={S.exLabel}>{index===0?"Opening Prompt":`Follow-up ${index}`}</div>
       {exchange.question && <div style={S.qCard}>"{exchange.question}"</div>}
       {rev && (
-        <div style={{...S.rPair,animation:"fadeIn 0.6s ease-out forwards"}}>
+        <div style={{...pair,animation:"fadeIn 0.6s ease-out forwards"}}>
           {["A","B"].map(label=>{
             const isH=(label==="A")===exchange.aIsLeft;
             return <div key={label} style={S.rCard(isH)}><div style={S.rTag}>Respondent {label}</div><div style={S.rText}>{isH?exchange.humanResponse:exchange.aiResponse}</div></div>;
@@ -360,6 +375,7 @@ function TuringFlip() {
 
   const wc=countWords(currentInput);
   const canSubmit=wc>=20&&wc<=50&&!isLoading;
+  const isMobile = useIsMobile();
 
   if(!mode) return <div style={S.root}><style>{fonts}{keyframes}</style><div style={S.grain}/><ModeSelect onSelect={setMode}/></div>;
 
@@ -370,17 +386,31 @@ function TuringFlip() {
     </div>
   );
 
+  const splitStyle = isMobile
+    ? { display:"flex", flexDirection:"column", minHeight:"calc(100vh - 92px)", position:"relative", zIndex:2 }
+    : S.splitContainer;
+  const panelStyle = isMobile
+    ? { padding:"18px 16px", display:"flex", flexDirection:"column", gap:"14px", maxHeight:"none" }
+    : S.panel;
+  const headerStyle = isMobile
+    ? { ...S.header, padding:"18px 16px 12px" }
+    : S.header;
+  const titleStyle = isMobile ? { ...S.title, fontSize:"22px" } : S.title;
+  const dividerStyle = isMobile
+    ? { height:"1px", background:"linear-gradient(to right,#1e1e24,#3f3f46,#1e1e24)", margin:"0 16px", position:"relative" }
+    : S.divider;
+
   return (
     <div style={S.root}>
       <style>{fonts}{keyframes}</style><div style={S.grain}/>
-      <div style={S.header}>
+      <div style={headerStyle}>
         <div style={S.label}>Installation 06</div>
-        <h1 style={S.title}>The Turing Flip</h1>
+        <h1 style={titleStyle}>The Turing Flip</h1>
         <div style={S.subtitle}>Exchange {Math.min(exchangeIndex+1,TOTAL)} of {TOTAL}</div>
       </div>
-      <div style={S.splitContainer}>
+      <div style={splitStyle}>
         {/* LEFT — Performer */}
-        <div style={S.panel}>
+        <div style={panelStyle}>
           <div style={S.panelTitle}>Your View — The Performer</div>
           <div style={S.promptBox}>
             <div style={S.promptLabel}>{exchangeIndex===0?"Conversation Starter":"Judge's Question"}</div>
@@ -408,9 +438,9 @@ function TuringFlip() {
           )}
         </div>
         {/* DIVIDER */}
-        <div style={S.divider}><div style={S.dividerText}>Divider</div></div>
+        <div style={dividerStyle}>{!isMobile && <div style={S.dividerText}>Divider</div>}</div>
         {/* RIGHT — Judge */}
-        <div style={S.panel} ref={scrollRef}>
+        <div style={panelStyle} ref={scrollRef}>
           <div style={S.panelTitle}>Judge's View — What They See</div>
           {exchanges.length===0&&phase==="writing"&&(
             <div style={{fontSize:"12px",color:"#3f3f46",textAlign:"center",padding:"40px 20px",lineHeight:1.8}}>
