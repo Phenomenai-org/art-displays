@@ -487,6 +487,29 @@ html, body {
 }
 .restart-btn:hover { opacity: 1; border-color: var(--cream); color: var(--cream); }
 
+/* ===== TOAST NOTIFICATION ===== */
+.toast {
+  position: fixed;
+  bottom: 48px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: rgba(35,26,31,0.97);
+  border: 1px solid rgba(232,168,76,0.3);
+  color: var(--cream-dim);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  padding: 10px 20px;
+  border-radius: 24px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s, transform 0.3s;
+  z-index: 200;
+}
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
 /* ===== INSTALLATION LABEL ===== */
 .install-label {
   position: fixed;
@@ -575,6 +598,7 @@ html, body {
 </div>
 
 <div class="install-label">Installation 4 · The Call · Phenomenai Exhibition</div>
+<div class="toast" id="toast"></div>
 
 <script>
 // ===== API CONFIG =====
@@ -781,6 +805,34 @@ CRITICAL RULES:
 The first message should be you, excited, immediately launching in — "${visitorName || 'Hey'}? Oh my God, you answered. Okay okay okay, I have to tell you something..."`;
 }
 
+let toastTimer = null;
+function showToast(msg, duration = 4000) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), duration);
+}
+
+async function fetchWithRetry(body) {
+  const opts = {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  };
+  let response = await fetch(`${WORKER_URL}/api/anthropic`, opts);
+  if (response.status === 529) {
+    showToast("The AI is busy right now — retrying in a moment...", 5000);
+    await new Promise(r => setTimeout(r, 3000));
+    response = await fetch(`${WORKER_URL}/api/anthropic`, opts);
+    if (response.status === 529) {
+      showToast("Still overloaded. Please try again shortly.", 5000);
+      throw new Error('529 overloaded');
+    }
+  }
+  return response;
+}
+
 async function sendToAI(userText) {
   showTyping();
 
@@ -794,15 +846,11 @@ async function sendToAI(userText) {
     : [...conversationHistory];
 
   try {
-    const response = await fetch(`${WORKER_URL}/api/anthropic`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 1000,
-        system: getSystemPrompt(),
-        messages: messages
-      })
+    const response = await fetchWithRetry({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 1000,
+      system: getSystemPrompt(),
+      messages: messages
     });
 
     const data = await response.json();
@@ -843,7 +891,9 @@ async function sendToAI(userText) {
   } catch (err) {
     hideTyping();
     console.error('API error:', err);
-    addMessage('ai', "...wait, sorry, I think the signal's cutting out. Can you hear me?");
+    if (err.message !== '529 overloaded') {
+      addMessage('ai', "...wait, sorry, I think the signal's cutting out. Can you hear me?");
+    }
   }
 }
 
