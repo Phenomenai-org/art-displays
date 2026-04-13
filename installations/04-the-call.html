@@ -847,7 +847,7 @@ async function sendToAI(userText) {
 
   try {
     const response = await fetchWithRetry({
-      model: 'claude-sonnet-4-6',
+      model: 'claude-sonnet-4-5-20250929',
       max_tokens: 1000,
       system: getSystemPrompt(),
       messages: messages
@@ -855,6 +855,10 @@ async function sendToAI(userText) {
 
     const data = await response.json();
     hideTyping();
+
+    if (!response.ok || !data.content) {
+      console.error('API error response:', response.status, data);
+    }
 
     const aiText = data.content
       ?.filter(b => b.type === 'text')
