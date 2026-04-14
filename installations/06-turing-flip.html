@@ -141,7 +141,7 @@ const S = {
   rText: { fontSize:"13px", color:"#a1a1aa", lineHeight:1.7 },
   qCard: { background:"#18181b", border:"1px solid #27272a", borderRadius:"2px", padding:"12px 16px", fontSize:"13px", color:"#e4e4e7", lineHeight:1.6, fontStyle:"italic", marginBottom:"12px" },
   mcOpt: (sel) => ({ background:sel?"#1a1a2e":"#12121a", border:`1px solid ${sel?"#a78bfa":"#1e1e24"}`, borderRadius:"2px", padding:"12px 16px", cursor:"pointer", fontSize:"13px", color:sel?"#e4e4e7":"#71717a", lineHeight:1.5, transition:"all 0.2s", marginBottom:"6px" }),
-  resWrap: { display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", minHeight:"calc(100vh - 100px)", padding:"40px 20px", textAlign:"center" },
+  resWrap: { display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"flex-start", minHeight:"calc(100vh - 100px)", padding:"32px 16px 48px", textAlign:"center", boxSizing:"border-box" },
   bigText: { fontFamily:"'Instrument Serif',serif", fontSize:"48px", color:"#fafafa", fontStyle:"italic", marginBottom:"8px" },
   detail: { fontSize:"12px", color:"#71717a", lineHeight:1.8, maxWidth:"400px" },
   pct: { fontFamily:"'Instrument Serif',serif", fontSize:"64px", color:"#a78bfa", fontStyle:"italic" },
@@ -171,6 +171,26 @@ async function askClaude(sys, msg) {
 // --- Components ---
 function WaitingDots({ label="synchronizing responses" }) {
   return <div style={S.dots}><span>{label}</span><div style={{display:"flex",gap:"3px"}}><div style={S.dot(0)}/><div style={S.dot(0.2)}/><div style={S.dot(0.4)}/></div></div>;
+}
+
+function ScoreBadge({ score }) {
+  const total = score.correct + score.incorrect;
+  return (
+    <div style={{
+      display:"inline-flex", gap:"10px", alignItems:"center",
+      marginTop:"10px", padding:"6px 12px",
+      background:"#12121a", border:"1px solid #27272a", borderRadius:"2px",
+      fontSize:"10px", letterSpacing:"1.5px", textTransform:"uppercase",
+      color:"#71717a", fontFamily:"'IBM Plex Mono',monospace"
+    }}>
+      <span style={{color:"#52525b"}}>Judge Score</span>
+      <span style={{color:"#f472b6"}}>{score.correct} correct</span>
+      <span style={{color:"#3f3f46"}}>·</span>
+      <span style={{color:"#a78bfa"}}>{score.incorrect} fooled</span>
+      <span style={{color:"#3f3f46"}}>·</span>
+      <span style={{color:"#71717a"}}>{total} rounds</span>
+    </div>
+  );
 }
 
 function WordCounter({ text }) {
@@ -251,32 +271,93 @@ function QuestionPicker({ options, onPick }) {
   );
 }
 
-function Results({ judgeGuess, suggestedTerm, judgeReasoning }) {
-  const humanWon = judgeGuess==="human";
+function Results({ judgeGuess, suggestedTerm, judgeReasoning, lastExchange, score }) {
+  const humanWon = judgeGuess==="human"; // true = judge was fooled
   const pct = useMemo(()=>Math.floor(Math.random()*40)+45,[]);
+  // Which letter (A or B) was the judge's pick as the AI?
+  let pickedLetter = null, humanLetter = null, aiLetter = null;
+  if (lastExchange) {
+    humanLetter = lastExchange.aIsLeft ? "A" : "B";
+    aiLetter    = lastExchange.aIsLeft ? "B" : "A";
+    pickedLetter = judgeGuess==="ai" ? aiLetter : humanLetter;
+  }
+  const pickedHuman = pickedLetter === humanLetter;
+  const verdictColor = humanWon ? "#a78bfa" : "#f472b6";
+  const cardBase = { background:"#12121a", border:"1px solid #1e1e24", borderRadius:"2px", padding:"16px", width:"100%", maxWidth:"min(440px,100%)", textAlign:"left", boxSizing:"border-box" };
   return (
     <div style={S.resWrap}>
-      <div style={{animation:"fadeIn 0.6s ease-out forwards"}}>
+      <div style={{animation:"fadeIn 0.6s ease-out forwards", display:"flex", flexDirection:"column", alignItems:"center", width:"100%", maxWidth:"min(480px,100%)"}}>
         <div style={S.label}>Results</div>
         <div style={{...S.bigText,marginTop:"16px"}}>{humanWon?"You fooled the Judge.":"The Judge saw through you."}</div>
-        <div style={{...S.detail,marginTop:"16px",marginBottom:"32px"}}>
+        <div style={{...S.detail,marginTop:"16px",marginBottom:"24px"}}>
           {humanWon?"The Judge identified the real AI as the human — your performance was more convincing than the machine itself."
                     :"The Judge correctly identified the real AI. Your responses read as human."}
         </div>
+
+        {/* Verdict banner: which respondent did the Judge pick? */}
+        {pickedLetter && (
+          <div style={{
+            width:"100%", maxWidth:"min(440px,100%)", boxSizing:"border-box",
+            padding:"14px 16px", borderRadius:"2px", marginBottom:"18px",
+            background:"#14141f", border:`1px solid ${verdictColor}`,
+            boxShadow:`0 0 24px ${verdictColor}33`, textAlign:"left"
+          }}>
+            <div style={{...S.termLabel, color:verdictColor}}>Judge's Verdict</div>
+            <div style={{fontFamily:"'Instrument Serif',serif", fontSize:"17px", color:"#fafafa", fontStyle:"italic", marginTop:"4px"}}>
+              "Respondent {pickedLetter} is the AI."
+            </div>
+            <div style={{fontSize:"11px", color:"#a1a1aa", marginTop:"8px", lineHeight:1.6}}>
+              {pickedHuman
+                ? <>The Judge picked <strong style={{color:verdictColor}}>you</strong> — the human. The real AI was Respondent {aiLetter}.</>
+                : <>The Judge picked the <strong style={{color:verdictColor}}>real AI</strong> (Respondent {aiLetter}). You were Respondent {humanLetter}.</>}
+            </div>
+          </div>
+        )}
+
+        {/* Side-by-side A vs B showing which one the judge chose */}
+        {lastExchange && (
+          <div style={{
+            display:"grid", gridTemplateColumns:"1fr 1fr", gap:"10px",
+            width:"100%", maxWidth:"min(440px,100%)", marginBottom:"20px", boxSizing:"border-box"
+          }}>
+            {["A","B"].map(letter=>{
+              const chosen = letter === pickedLetter;
+              const isHuman = letter === humanLetter;
+              return (
+                <div key={letter} style={{
+                  background:chosen?"#1a1a2e":"#0f0f14",
+                  border:`1px solid ${chosen?verdictColor:"#1e1e24"}`,
+                  boxShadow: chosen?`0 0 18px ${verdictColor}40`:"none",
+                  borderRadius:"2px", padding:"10px 12px",
+                  textAlign:"left", position:"relative", minWidth:0, overflow:"hidden"
+                }}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"4px"}}>
+                    <span style={{...S.rTag, color:chosen?verdictColor:"#3f3f46", margin:0}}>Respondent {letter}</span>
+                    {chosen && <span style={{fontSize:"9px",letterSpacing:"1px",color:verdictColor,textTransform:"uppercase"}}>★ Judge's pick</span>}
+                  </div>
+                  <div style={{fontSize:"9px",letterSpacing:"1.5px",textTransform:"uppercase",color:"#52525b",marginBottom:"6px"}}>
+                    {isHuman?"was you":"was the AI"}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
         <div style={S.pct}>{pct}%</div>
         <div style={{...S.detail,marginTop:"8px"}}>more convincing than {pct}% of visitors</div>
         {judgeReasoning && (
-          <div style={{...S.card,marginTop:"24px",maxWidth:"400px",textAlign:"left"}}>
+          <div style={{...cardBase,marginTop:"24px"}}>
             <div style={S.termLabel}>The Judge's Reasoning</div>
-            <div style={{fontSize:"13px",color:"#a1a1aa",lineHeight:1.7,fontStyle:"italic"}}>"{judgeReasoning}"</div>
+            <div style={{fontSize:"13px",color:"#a1a1aa",lineHeight:1.7,fontStyle:"italic",overflowWrap:"break-word",wordBreak:"break-word"}}>"{judgeReasoning}"</div>
           </div>
         )}
-        <div style={{...S.card,marginTop:"16px",maxWidth:"400px",textAlign:"left"}}>
+        <div style={{...cardBase,marginTop:"16px"}}>
           <div style={S.termLabel}>Your suggested term</div>
           <div style={S.termName}>{suggestedTerm.term}</div>
-          <div style={S.termDef}>{suggestedTerm.definition}</div>
+          <div style={{...S.termDef, overflowWrap:"break-word"}}>{suggestedTerm.definition}</div>
         </div>
-        <div style={{marginTop:"24px",fontSize:"11px",color:"#52525b"}}>
+        <div style={{marginTop:"24px",fontSize:"11px",color:"#52525b",textAlign:"center"}}>
           In the real installation, a QR code would appear here<br/>linking to phenomenai.org/test and your personal results.
         </div>
       </div>
@@ -299,6 +380,13 @@ function TuringFlip() {
   const [judgeGuess, setJudgeGuess] = useState(null);
   const [judgeReasoning, setJudgeReasoning] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [score, setScore] = useState(()=>{
+    try {
+      const raw = localStorage.getItem('turingFlipScore');
+      if (raw) { const p = JSON.parse(raw); return { correct: p.correct|0, incorrect: p.incorrect|0 }; }
+    } catch(e) {}
+    return { correct:0, incorrect:0 };
+  });
   const scrollRef = useRef(null);
   const TOTAL = 5;
 
@@ -341,8 +429,18 @@ function TuringFlip() {
       });
       const raw = await askClaude(jSys, tr);
       const last = updated[updated.length-1];
-      if(raw.includes("GUESS: A")) setJudgeGuess(last.aIsLeft?"human":"ai");
-      else setJudgeGuess(!last.aIsLeft?"human":"ai");
+      const finalGuess = raw.includes("GUESS: A")
+        ? (last.aIsLeft?"human":"ai")
+        : (!last.aIsLeft?"human":"ai");
+      setJudgeGuess(finalGuess);
+      // Update persistent score: correct = judge identified the AI, incorrect = judge was fooled.
+      setScore(prev=>{
+        const next = finalGuess==="ai"
+          ? { ...prev, correct: prev.correct+1 }
+          : { ...prev, incorrect: prev.incorrect+1 };
+        try { localStorage.setItem('turingFlipScore', JSON.stringify(next)); } catch(e) {}
+        return next;
+      });
       const rm=raw.match(/REASONING:\s*(.+)/s);
       setJudgeReasoning(rm?rm[1].trim():null);
       setPhase("results");
@@ -380,9 +478,13 @@ function TuringFlip() {
   if(!mode) return <div style={S.root}><style>{fonts}{keyframes}</style><div style={S.grain}/><ModeSelect onSelect={setMode}/></div>;
 
   if(phase==="results") return (
-    <div style={S.root}><style>{fonts}{keyframes}</style><div style={S.grain}/>
-      <div style={S.header}><div style={S.label}>Installation 06</div><h1 style={S.title}>The Turing Flip</h1></div>
-      <Results judgeGuess={judgeGuess} suggestedTerm={suggestedTerm} judgeReasoning={judgeReasoning}/>
+    <div style={{...S.root, overflow:"auto", overflowX:"hidden"}}><style>{fonts}{keyframes}</style><div style={S.grain}/>
+      <div style={{...S.header, padding: isMobile?"18px 16px 12px":"24px 20px 16px"}}>
+        <div style={S.label}>Installation 06</div>
+        <h1 style={{...S.title, fontSize: isMobile?"22px":"28px"}}>The Turing Flip</h1>
+        <ScoreBadge score={score}/>
+      </div>
+      <Results judgeGuess={judgeGuess} suggestedTerm={suggestedTerm} judgeReasoning={judgeReasoning} lastExchange={exchanges[exchanges.length-1]} score={score}/>
     </div>
   );
 
@@ -407,6 +509,7 @@ function TuringFlip() {
         <div style={S.label}>Installation 06</div>
         <h1 style={titleStyle}>The Turing Flip</h1>
         <div style={S.subtitle}>Exchange {Math.min(exchangeIndex+1,TOTAL)} of {TOTAL}</div>
+        {(score.correct+score.incorrect) > 0 && <ScoreBadge score={score}/>}
       </div>
       <div style={splitStyle}>
         {/* LEFT — Performer */}

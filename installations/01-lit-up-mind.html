@@ -290,6 +290,13 @@
   }
   #controls button:hover { color: #a29bfe; border-color: rgba(108,92,231,0.3); }
 
+  /* Hoverless devices: keep nav controls visibly active so they don't
+     read as disabled grey text on mobile. */
+  @media (hover: none) {
+    #controls button { color: #a29bfe; border-color: rgba(108,92,231,0.3); }
+    .int-btn { background: rgba(108,92,231,0.2); }
+  }
+
   /* Scrollbar */
   ::-webkit-scrollbar { width: 4px; }
   ::-webkit-scrollbar-track { background: transparent; }
@@ -614,6 +621,7 @@ function showSlide(n) {
     document.getElementById('controls').style.display = 'none';
     initInteractive();
     bgIntensity = 0.15;
+    if(typeof stopAutoAdvance==='function') stopAutoAdvance();
   }
 
   document.getElementById('progress').style.width = ((cur+1)/(TOTAL_SLIDES+1)*100)+'%';
@@ -670,17 +678,49 @@ function runExCompare(){
   },700);
 }
 
+// Per-slide auto-advance durations (ms). Longer for slides with more text
+// or built-in animations (s4 word-by-word, s8 invitation).
+const SLIDE_DURATIONS = [5500, 7000, 7000, 10000, 12500, 7500, 9000, 7500, 10500, 6500];
+
+function stopAutoAdvance(){
+  if(autoSlideTimer){clearTimeout(autoSlideTimer);autoSlideTimer=null;}
+  const btn = document.getElementById('navAuto');
+  if(btn) btn.textContent='▶ Auto';
+}
+function startAutoAdvance(){
+  stopAutoAdvance();
+  if(cur>=TOTAL_SLIDES) return;
+  const btn = document.getElementById('navAuto');
+  if(btn) btn.textContent='❚❚ Stop';
+  const dur = SLIDE_DURATIONS[cur] || 7000;
+  autoSlideTimer = setTimeout(()=>{
+    autoSlideTimer=null;
+    if(cur<TOTAL_SLIDES){ showSlide(cur+1); startAutoAdvance(); }
+    else stopAutoAdvance();
+  }, dur);
+}
+
 // Nav
-document.getElementById('navNext').onclick = () => { clearInterval(autoSlideTimer); autoSlideTimer=null; document.getElementById('navAuto').textContent='▶ Auto'; showSlide(cur+1); };
-document.getElementById('navPrev').onclick = () => { clearInterval(autoSlideTimer); autoSlideTimer=null; document.getElementById('navAuto').textContent='▶ Auto'; showSlide(cur-1); };
+document.getElementById('navNext').onclick = () => { showSlide(cur+1); startAutoAdvance(); };
+document.getElementById('navPrev').onclick = () => { showSlide(cur-1); startAutoAdvance(); };
 document.getElementById('navAuto').onclick = function(){
-  if(autoSlideTimer){clearInterval(autoSlideTimer);autoSlideTimer=null;this.textContent='▶ Auto';return;}
-  this.textContent='❚❚ Stop';
-  autoSlideTimer=setInterval(()=>{
-    if(cur>=TOTAL_SLIDES){clearInterval(autoSlideTimer);autoSlideTimer=null;document.getElementById('navAuto').textContent='▶ Auto';return;}
-    showSlide(cur+1);
-  },5500);
+  if(autoSlideTimer) stopAutoAdvance();
+  else startAutoAdvance();
 };
+
+// Tap-to-advance: tapping left half goes back, right half advances.
+// Ignores taps on the control bars and the interactive screen.
+document.addEventListener('click', (e)=>{
+  if(cur>=TOTAL_SLIDES) return;
+  if(e.target.closest('#controls')) return;
+  if(e.target.closest('.int-controls')) return;
+  if(e.target.closest('#interactive-screen')) return;
+  if(e.target.closest('button')||e.target.closest('a')) return;
+  const w = window.innerWidth;
+  if(e.clientX < w/2) showSlide(Math.max(0, cur-1));
+  else showSlide(cur+1);
+  startAutoAdvance();
+});
 
 // ==============================
 // INTERACTIVE MODE
@@ -887,6 +927,7 @@ document.getElementById('btnSound').onclick = function(){
 // INIT
 // ==============================
 showSlide(0);
+startAutoAdvance();
 </script>
 </body>
 </html>

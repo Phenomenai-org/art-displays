@@ -580,6 +580,13 @@ html, body {
   .call-status-text { display: none; }
   .call-header { padding: 12px 14px; }
 }
+
+/* Hoverless devices: the restart button's default state is opacity 0.4
+   which reads as disabled on touch. Surface its hover state permanently. */
+@media (hover: none) {
+  .restart-btn { opacity: 1; border-color: var(--cream); color: var(--cream); }
+  .call-mic { border-color: var(--amber); color: var(--amber); }
+}
 </style>
 </head>
 <body>

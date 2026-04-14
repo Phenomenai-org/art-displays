@@ -71,12 +71,33 @@ body {
   100% { transform: translate(var(--dx, 100px), var(--dy, 50px)) rotate(var(--rot-end, 5deg)); opacity: 0; }
 }
 
-/* Level-specific backgrounds */
-.level-1 { background: #0a0a0a; }
-.level-2 { background: #0d0c0b; }
-.level-3 { background: #110f0d; }
-.level-4 { background: #14120f; }
-.level-5 { background: #1a1916; }
+/* Level-specific backgrounds — dark (unseen) to warm light (understood) */
+.level-1 { background: radial-gradient(ellipse at 50% 50%, #0c0a08 0%, #020201 100%); }
+.level-2 { background: radial-gradient(ellipse at 50% 50%, #1a1510 0%, #060504 100%); }
+.level-3 { background: radial-gradient(ellipse at 50% 50%, #30241a 0%, #0c0906 100%); }
+.level-4 { background: radial-gradient(ellipse at 50% 50%, #4e3824 0%, #120b07 100%); }
+.level-5 { background: radial-gradient(ellipse at 50% 50%, #7a5a34 0%, #1c120a 100%); }
+
+/* Progressive visibility — text emerges as understanding brightens */
+.level-1 .level-num  { opacity: 0.18; }
+.level-1 .level-name { opacity: 0.45; }
+.level-1 .level-desc { opacity: 0.25; }
+
+.level-2 .level-num  { opacity: 0.25; }
+.level-2 .level-name { opacity: 0.6; }
+.level-2 .level-desc { opacity: 0.4; }
+
+.level-3 .level-num  { opacity: 0.35; }
+.level-3 .level-name { opacity: 0.75; }
+.level-3 .level-desc { opacity: 0.55; }
+
+.level-4 .level-num  { opacity: 0.45; }
+.level-4 .level-name { opacity: 0.9; }
+.level-4 .level-desc { opacity: 0.72; }
+
+.level-5 .level-num  { opacity: 0.6; color: #f4ead0; }
+.level-5 .level-name { opacity: 1; color: #f8eed4; }
+.level-5 .level-desc { opacity: 0.92; color: #f4ead0; }
 
 /* Skeptic boundary text */
 .skeptic-boundary {
@@ -153,56 +174,80 @@ body {
   opacity: 0.35;
 }
 
-/* Sound indicator */
+/* Sound banner — sound is central to this piece, so surface it prominently */
 .sound-ctl {
   position: fixed;
-  bottom: 24px;
-  left: 24px;
+  top: 0;
+  left: 0;
+  right: 0;
   z-index: 100;
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: center;
+  gap: 14px;
   font-family: var(--mono);
-  font-size: 11px;
-  color: rgba(228,220,200,0.35);
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(228,220,200,0.9);
   cursor: pointer;
-  padding: 8px 14px;
-  border: 1px solid rgba(228,220,200,0.1);
-  border-radius: 4px;
-  background: rgba(10,10,10,0.8);
-  backdrop-filter: blur(8px);
-  transition: border-color 0.3s;
+  padding: 15px 24px;
+  border: none;
+  border-bottom: 1px solid rgba(196,122,58,0.35);
+  background: linear-gradient(180deg, rgba(22,16,10,0.95) 0%, rgba(12,9,6,0.85) 100%);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: background 0.3s, border-color 0.3s;
   user-select: none;
 }
 
-.sound-ctl:hover { border-color: rgba(228,220,200,0.25); }
-
-.sound-ctl:not(.active) {
-  animation: blink-sound 2.5s ease-in-out infinite;
+.sound-ctl:hover {
+  background: linear-gradient(180deg, rgba(40,28,15,0.97) 0%, rgba(22,16,10,0.92) 100%);
 }
 
-@keyframes blink-sound {
-  0%, 100% { border-color: rgba(228,220,200,0.1); color: rgba(228,220,200,0.35); }
-  50% { border-color: rgba(196,122,58,0.4); color: rgba(196,122,58,0.6); }
+.sound-ctl:not(.active) {
+  animation: pulse-banner 2.4s ease-in-out infinite;
+}
+
+@keyframes pulse-banner {
+  0%, 100% {
+    border-bottom-color: rgba(196,122,58,0.35);
+    box-shadow: 0 0 0 rgba(196,122,58,0);
+  }
+  50% {
+    border-bottom-color: rgba(196,122,58,0.9);
+    box-shadow: 0 2px 28px rgba(196,122,58,0.22);
+  }
 }
 
 .sound-ctl .dot {
-  width: 6px; height: 6px;
+  width: 9px; height: 9px;
   border-radius: 50%;
-  background: rgba(228,220,200,0.2);
-  transition: background 0.3s;
+  background: rgba(228,220,200,0.3);
+  transition: background 0.3s, box-shadow 0.3s;
 }
 
 .sound-ctl:not(.active) .dot {
-  animation: blink-dot 2.5s ease-in-out infinite;
+  animation: blink-dot 2.4s ease-in-out infinite;
 }
 
 @keyframes blink-dot {
-  0%, 100% { background: rgba(228,220,200,0.2); }
-  50% { background: rgba(196,122,58,0.6); }
+  0%, 100% { background: rgba(228,220,200,0.3); box-shadow: 0 0 0 rgba(196,122,58,0); }
+  50% { background: rgba(196,122,58,0.95); box-shadow: 0 0 14px rgba(196,122,58,0.7); }
 }
 
-.sound-ctl.active .dot { background: #c47a3a; }
+.sound-ctl.active .dot {
+  background: #c47a3a;
+  box-shadow: 0 0 12px rgba(196,122,58,0.6);
+}
+
+.sound-ctl .sc-hint {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  opacity: 0.55;
+  font-weight: 300;
+  text-transform: none;
+}
 
 /* Progress indicator */
 .progress-track {
@@ -321,7 +366,7 @@ body {
 /* Speaker visualization */
 .speakers {
   position: absolute;
-  top: 20px;
+  top: 72px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -368,10 +413,11 @@ body {
   .progress-track { right: 12px; gap: 0; }
   .progress-line { height: 18px; }
   .progress-dot { width: 10px; height: 10px; }
-  .sound-ctl { left: 12px; bottom: 14px; padding: 7px 11px; font-size: 10px; }
+  .sound-ctl { padding: 12px 16px; font-size: 11px; letter-spacing: 0.1em; gap: 10px; }
+  .sound-ctl .sc-hint { display: none; }
   .entry-prompt { font-size: 10px; bottom: 14px; }
   .map-node { font-size: 9.5px; padding: 4px 8px; }
-  .speakers { gap: 10px; }
+  .speakers { top: 62px; gap: 10px; }
 }
 
 @media (max-width: 380px) {
@@ -471,10 +517,11 @@ body {
 
 </div>
 
-<!-- Sound control -->
+<!-- Sound control — this installation is audio-led, so surface it prominently -->
 <div class="sound-ctl" id="sound-ctl" onclick="toggleSound()">
   <span class="dot"></span>
   <span id="sound-label">Enable sound</span>
+  <span class="sc-hint">— this piece is audio-led</span>
 </div>
 
 <!-- Progress dots -->
@@ -692,6 +739,7 @@ let masterGain = null;
 let lfo = null;
 let lfoGain = null;
 let currentLevel = 1;
+let pulseTimer = null;  // JS-scheduled irregular pulses (level 1)
 
 function initAudio() {
   audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -716,13 +764,14 @@ function initAudio() {
     gainNodes.push(gain);
   });
 
-  // LFO for Level 4 rhythm
-  // This oscillator is too slow to hear (~1.8Hz).
-  // Instead of going to speakers, it wiggles the master volume
-  // up and down, creating a pulse — like a heartbeat.
+  // LFO for rhythmic pulsing (levels 2-4)
+  // Inaudibly slow oscillator (~1-3Hz) that modulates master volume
+  // rather than going to the speakers — creates a breathing pulse.
+  // Level 1 uses JS-scheduled irregular pulses instead (via pulseTimer).
+  // Level 5 turns this off for a single sustained tone.
   lfo = audioCtx.createOscillator();
   lfo.type = 'sine';
-  lfo.frequency.value = 1.8;  // pulses per second
+  lfo.frequency.value = 2.0;  // pulses per second, will be retuned per level
   lfoGain = audioCtx.createGain();
   lfoGain.gain.value = 0;     // starts silent (no rhythm)
   lfo.connect(lfoGain);
@@ -730,16 +779,48 @@ function initAudio() {
   lfo.start();
 }
 
+// ─── ERRATIC PULSE (Level 1) ───
+// At Level 1 the sound is fragmented — meaning hasn't settled yet.
+// We schedule rapid, irregular gain changes on masterGain to create
+// a chaotic pulsing that feels pre-linguistic.
+function startIrregularPulse() {
+  stopIrregularPulse();
+  if (!audioCtx || !masterGain) return;
+  const tick = () => {
+    if (!audioEnabled || currentLevel !== 1 || !audioCtx) {
+      pulseTimer = null;
+      return;
+    }
+    const t = audioCtx.currentTime;
+    // Wild swings in amplitude — 0.02 to 0.26, biased toward extremes
+    const target = 0.02 + Math.pow(Math.random(), 0.7) * 0.24;
+    masterGain.gain.cancelScheduledValues(t);
+    masterGain.gain.setTargetAtTime(target, t, 0.018);
+    // Irregular inter-pulse delay: 35ms – 190ms
+    const delay = 35 + Math.random() * 155;
+    pulseTimer = setTimeout(tick, delay);
+  };
+  tick();
+}
+
+function stopIrregularPulse() {
+  if (pulseTimer) { clearTimeout(pulseTimer); pulseTimer = null; }
+  if (audioCtx && masterGain) {
+    masterGain.gain.cancelScheduledValues(audioCtx.currentTime);
+    masterGain.gain.setTargetAtTime(0.12, audioCtx.currentTime, 0.4);
+  }
+}
+
 function updateAudio(level) {
   if (!audioCtx || !audioEnabled) return;
   const t = audioCtx.currentTime;
   const fade = 1.5;
 
-  // Level 1: all 6, detuned and dissonant
-  // Level 2: 4, less detuned
-  // Level 3: 3, forming a chord (C-E-G)
-  // Level 4: 3, resolved chord with subtle movement
-  // Level 5: 1, single pure tone, then fade
+  // Level 1: dissonant cluster + erratic irregular JS pulses
+  // Level 2: less detuned, fast-ish regular LFO (still unsettled)
+  // Level 3: C-E-G triad, slower LFO
+  // Level 4: C-E-G-B (maj7), gentle slow LFO
+  // Level 5: single sustained C, no pulsing at all
 
   const configs = {
     1: {
@@ -764,7 +845,7 @@ function updateAudio(level) {
     },
     5: {
       freqs: [130.81, 164.81, 196.00, 246.94, 293.66, 349.23],
-      gains: [0.14, 0, 0, 0, 0, 0],            // single C
+      gains: [0.18, 0, 0, 0, 0, 0],            // single sustained C
       detune: [0, 0, 0, 0, 0, 0],
     },
   };
@@ -776,12 +857,30 @@ function updateAudio(level) {
     gainNodes[i].gain.setTargetAtTime(cfg.gains[i], t, fade);
   });
 
-  // LFO rhythm: only active at Level 4
-  // lfoGain.gain controls how much the LFO affects volume.
-  // 0 = no pulse, 0.04 = gentle rhythmic swell
-  if (lfoGain) {
-    const lfoAmount = level === 4 ? 0.04 : 0;
-    lfoGain.gain.setTargetAtTime(lfoAmount, t, fade);
+  // Pulse behavior: erratic at L1, gradually settling L2-L4, silent at L5
+  // Level 1 uses JS timer (irregular). Levels 2-4 use the LFO at decreasing
+  // rate and amplitude, so the "heartbeat" slows and calms as understanding
+  // arrives. Level 5 drops both — a single sustained tone remains.
+  const lfoConfigs = {
+    1: { rate: 0,   amount: 0 },     // silent — JS pulser handles it
+    2: { rate: 3.2, amount: 0.055 }, // fast, unsettled pulse
+    3: { rate: 2.2, amount: 0.04 },  // slower, more regular
+    4: { rate: 1.4, amount: 0.028 }, // slow, gentle breath
+    5: { rate: 0,   amount: 0 },     // no pulse — sustained tone
+  };
+
+  if (level === 1) {
+    startIrregularPulse();
+  } else {
+    stopIrregularPulse();
+  }
+
+  if (lfo && lfoGain) {
+    const lc = lfoConfigs[level];
+    if (lc.rate > 0) {
+      lfo.frequency.setTargetAtTime(lc.rate, t, fade);
+    }
+    lfoGain.gain.setTargetAtTime(lc.amount, t, fade);
   }
 }
 
@@ -800,6 +899,7 @@ function toggleSound() {
     audioEnabled = false;
     btn.classList.remove('active');
     label.textContent = 'Enable sound';
+    stopIrregularPulse();
     gainNodes.forEach(g => {
       g.gain.setTargetAtTime(0, audioCtx.currentTime, 0.5);
     });

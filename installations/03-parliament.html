@@ -29,6 +29,33 @@
   .arena-ring::before { content:''; position:absolute; inset:35px; border-radius:50%; border:1px dashed rgba(255,255,255,0.04); }
   .arena-ring::after { content:'DEBATE FLOOR'; position:absolute; top:50%;left:50%; transform:translate(-50%,-50%); font-family:'JetBrains Mono',monospace; font-size:0.5rem; letter-spacing:0.3em; color:var(--text-muted); }
 
+  /* Primary call-to-action: start the debate */
+  .start-overlay {
+    position:absolute; top:50%; left:50%;
+    transform:translate(-50%,-50%);
+    width:180px; height:180px; border-radius:50%;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    background:radial-gradient(circle, rgba(192,132,252,0.22) 0%, rgba(10,10,15,0.92) 72%);
+    border:1px solid rgba(255,255,255,0.22);
+    color:var(--text); cursor:pointer;
+    z-index:30;
+    backdrop-filter:blur(8px);
+    box-shadow:0 0 40px rgba(192,132,252,0.22), inset 0 0 24px rgba(255,255,255,0.05);
+    font-family:'JetBrains Mono',monospace;
+    animation:startPulse 2.8s ease-in-out infinite;
+    transition:transform 0.3s ease, box-shadow 0.3s ease, opacity 0.6s ease;
+  }
+  .start-overlay:hover { transform:translate(-50%,-50%) scale(1.06); box-shadow:0 0 70px rgba(192,132,252,0.45), inset 0 0 24px rgba(255,255,255,0.08); }
+  .start-overlay:disabled { cursor:wait; opacity:0.55; animation:none; }
+  .start-overlay.hidden { opacity:0; pointer-events:none; transform:translate(-50%,-50%) scale(0.8); }
+  .start-icon { font-size:2.4rem; line-height:1; margin-bottom:10px; color:#fff; }
+  .start-label { font-size:0.64rem; letter-spacing:0.22em; text-transform:uppercase; color:#e8e6e1; }
+  .start-sub { font-size:0.52rem; letter-spacing:0.15em; color:var(--text-dim); margin-top:4px; }
+  @keyframes startPulse {
+    0%,100% { box-shadow:0 0 40px rgba(192,132,252,0.22), inset 0 0 24px rgba(255,255,255,0.05); }
+    50%     { box-shadow:0 0 72px rgba(192,132,252,0.42), inset 0 0 24px rgba(255,255,255,0.09); }
+  }
+
   .seat { position:absolute; width:90px; display:flex; flex-direction:column; align-items:center; cursor:pointer; transition:transform 0.3s ease; }
   .seat:hover { transform:translate(-50%,-50%) scale(1.08) !important; }
   .seat.speaking .holo-figure { opacity:1; }
@@ -144,11 +171,25 @@
     .btn { padding:0.45rem 0.75rem; font-size:0.6rem; }
   }
 
+  @media(max-width:600px) {
+    .start-overlay { width:140px; height:140px; }
+    .start-icon { font-size:2rem; margin-bottom:6px; }
+    .start-label { font-size:0.58rem; }
+    .start-sub { font-size:0.48rem; }
+  }
   @media(max-width:380px) {
     .arena-ring { width:min(300px,92vw); height:min(300px,92vw); }
     .seat { width:54px; }
     .holo-figure { width:32px; height:42px; }
     .seat-name { display:none; }
+    .start-overlay { width:120px; height:120px; }
+  }
+
+  /* Hoverless devices: surface hover affordances so role options and
+     control buttons don't look inert. */
+  @media(hover:none) {
+    .role-opt { background:rgba(255,255,255,0.04); border-color:var(--ring); }
+    .btn { background:rgba(255,255,255,0.06); border-color:rgba(255,255,255,0.15); }
   }
 </style>
 </head>
@@ -160,7 +201,13 @@
 </div>
 
 <div class="stage">
-  <div class="arena"><div class="arena-ring" id="arenaRing"></div></div>
+  <div class="arena"><div class="arena-ring" id="arenaRing">
+    <button class="start-overlay" id="startBtn" disabled>
+      <span class="start-icon">▶</span>
+      <span class="start-label">Begin Debate</span>
+      <span class="start-sub" id="startSub">loading voices…</span>
+    </button>
+  </div></div>
 
   <div class="panel-right">
     <div class="counter">
@@ -311,8 +358,11 @@ function initVoices() {
     // Hide loading indicator
     const li = document.getElementById('voiceLoading');
     if (li) { li.textContent = '● voices ready'; li.style.color = 'var(--accent-func)'; setTimeout(() => { li.style.opacity = '0'; setTimeout(() => li.remove(), 500); }, 800); }
-    // Auto-start the debate
-    startAutoPlay();
+    // Enable the start button — user must click to begin
+    const btn = document.getElementById('startBtn');
+    const sub = document.getElementById('startSub');
+    if (btn) btn.disabled = false;
+    if (sub) sub.textContent = 'tap to start';
   };
   synth.speak(warmup);
 }
@@ -479,6 +529,15 @@ document.querySelectorAll('.role-opt').forEach(opt => {
 // Show turn 0 visually (no speech yet — voices may still be loading)
 showTurn(0, true);
 preloadNext(0);
+
+// Primary call-to-action: begin debate on user click
+document.getElementById('startBtn').addEventListener('click', function() {
+  if (this.disabled) return;
+  this.classList.add('hidden');
+  // Remove from tab order after fade
+  setTimeout(() => { this.style.display = 'none'; }, 700);
+  startAutoPlay();
+});
 </script>
 </body>
 </html>
